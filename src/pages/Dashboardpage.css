@@ -1,0 +1,15 @@
+/* src/styles/StatisticsPage.module.css */
+.statistics-container {
+  /* Use the common container styles from App.css */
+  text-align: center;
+}
+
+.stats-placeholder {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px dashed #a0a0a0;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+  color: #666;
+  font-style: italic;
+}

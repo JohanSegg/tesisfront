@@ -1,0 +1,145 @@
+/* src/styles/recordingpage.css */
+
+/* Asegurar que la fuente Inter se aplique globalmente */
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Contenedor principal de la página de grabación */
+.recording-page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column; /* Organiza los elementos verticalmente */
+  align-items: center;
+  justify-content: flex-start; /* Alinea al inicio para dejar espacio para el contenido */
+  background: linear-gradient(to bottom right, #4a00e0, #8e2de2); /* Un gradiente vibrante */
+  padding: 2rem; /* Espaciado general */
+  color: #f0f0f0; /* Color de texto claro */
+  text-align: center;
+  gap: 1.5rem; /* Espacio entre elementos principales */
+}
+
+/* Título de la página */
+.recording-page-container h1 {
+  font-size: 2.5rem; /* text-4xl */
+  font-weight: 800; /* font-extrabold */
+  color: #ffffff; /* text-white */
+  margin-bottom: 1.5rem; /* mb-6 */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Sombra para el texto */
+}
+
+/* Contenedor de controles (botones) */
+.controls {
+  margin-bottom: 1.5rem; /* mb-6 */
+}
+
+/* Botón de Iniciar/Detener Análisis */
+.control-button {
+  background: linear-gradient(to right, #00c6ff, #0072ff); /* Gradiente azul */
+  color: white;
+  font-weight: 700; /* font-bold */
+  padding: 0.75rem 2rem; /* py-3 px-8 */
+  border-radius: 0.75rem; /* rounded-xl */
+  border: none;
+  cursor: pointer;
+  font-size: 1.125rem; /* text-lg */
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.control-button:hover:not(:disabled) {
+  background: linear-gradient(to right, #00b0e0, #0056cc); /* Gradiente más oscuro al hover */
+  transform: translateY(-2px); /* Pequeño efecto de elevación */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.control-button:disabled {
+  background: #6b7280; /* bg-gray-500 */
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+/* Mensaje de estado */
+.status-message {
+  font-size: 1rem; /* text-base */
+  color: #e0e0e0; /* text-gray-200 */
+  margin-bottom: 1.5rem; /* mb-6 */
+  font-weight: 500;
+}
+
+/* Contenedor del canvas */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px; /* Limita el ancho máximo del canvas */
+  aspect-ratio: 4 / 3; /* Mantiene una relación de aspecto común para video */
+  background-color: #000000; /* Fondo negro para el canvas */
+  border-radius: 1rem; /* rounded-xl */
+  overflow: hidden; /* Asegura que el contenido no se desborde */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); /* Sombra más pronunciada */
+  border: 4px solid #ffffff; /* Borde blanco para destacar */
+}
+
+/* Estilos del canvas */
+#displayCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ajusta el video para cubrir el canvas */
+}
+
+/* Área de resultados */
+.result-area {
+  background-color: rgba(255, 255, 255, 0.1); /* Fondo semitransparente */
+  padding: 1.5rem; /* p-6 */
+  border-radius: 0.75rem; /* rounded-xl */
+  margin-top: 2rem; /* mt-8 */
+  width: 100%;
+  max-width: 500px; /* Ancho máximo para los resultados */
+  color: #ffffff; /* Texto blanco */
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600; /* font-semibold */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  line-height: 1.6;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .recording-page-container h1 {
+    font-size: 2rem;
+  }
+
+  .control-button {
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .status-message {
+    font-size: 0.9rem;
+  }
+
+  .result-area {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .recording-page-container {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .recording-page-container h1 {
+    font-size: 1.8rem;
+  }
+
+  .control-button {
+    width: 100%; /* Botón de ancho completo en móviles pequeños */
+  }
+}
