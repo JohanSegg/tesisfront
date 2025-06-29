@@ -390,8 +390,7 @@ const LoginPage: React.FC = () => {
 
           <div className="relative z-10 p-8 bg-gray-900 bg-opacity-80 rounded-xl shadow-lg border border-gray-700 max-w-md">
             <p className="text-xl italic text-gray-100 leading-relaxed mb-6">
-              "Imagina tener ua aplicacion que peuda monitorear tu nivel de estress en tiempo real y propocioanrte estadisticas, eso es StressScan"
-            </p>
+¿Te imaginas una aplicación que monitorea tu estrés en tiempo real y te da el poder de entenderlo con estadísticas claras? Eso es StressScan.            </p>
             <div className="flex items-center">
               {/* Avatar del testimonio (ejemplo con SVG, puedes usar una imagen) */}
               <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
