@@ -5,6 +5,7 @@ import { AuthProvider } from './contexto/AuthContext'; // Importa tu AuthProvide
 import LoginPage from './pages/LoginPage';
 import RecordingPage from './pages/RecordingPage'; // Tu página de grabación
 import DashboardPage from './pages/DashboardPage';
+import HistorialPage from './pages/HistorialPage';
 // Importa otros componentes/páginas según sea necesario
 
 const App: React.FC = () => {
@@ -16,6 +17,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} /> {/* Puedes tener /login también */}
           <Route path="/recording" element={<RecordingPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/Historial" element={<HistorialPage />} />
           {/* Agrega otras rutas aquí */}
         </Routes>
       </AuthProvider>

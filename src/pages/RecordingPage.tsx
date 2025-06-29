@@ -6,9 +6,128 @@ import { useAuth } from '../contexto/AuthContext'; // Asegúrate de que esta rut
 
 // ELIMINA la importación de CSS: import './recordingpage.css';
 
+interface CuestionarioModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (formData: CuestionarioFormData) => void;
+  sessionId: number;
+}
+
+// --- Interfaz para los datos del formulario del cuestionario ---
+interface CuestionarioFormData {
+  sesion_id: number;
+  descripcion_trabajo?: string;
+  nivel_de_sensacion_estres?: number; // Ajustado a "emocional" como en tu API
+  molestias_fisicas_visual?: number;
+  molestias_fisicas_otros?: number;
+  dificultad_concentracion?: number;
+}
+
+// --- Componente de Rango con Etiqueta (para los niveles 1-5) ---
+const RangeInput: React.FC<{ label: string; value: number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; }> = ({ label, value, onChange }) => (
+  <div className="mb-4">
+    <label className="block text-gray-300 text-sm font-bold mb-2">{label}: <span className="text-indigo-400 font-extrabold">{value}</span></label>
+    <input
+      type="range"
+      min="1"
+      max="5"
+      value={value}
+      onChange={onChange}
+      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+    />
+  </div>
+);
+
+
+// --- Componente del Modal del Cuestionario ---
+const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, onSubmit, sessionId }) => {
+  const [formData, setFormData] = useState<CuestionarioFormData>({
+    sesion_id: sessionId,
+    descripcion_trabajo: '',
+    nivel_de_sensacion_estres: 3,
+    molestias_fisicas_visual: 1,
+    molestias_fisicas_otros: 1,
+    dificultad_concentracion: 1,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Actualizar el sesion_id si cambia la prop
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, sesion_id: sessionId }));
+  }, [sessionId]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: e.target.type === 'range' ? parseInt(value, 10) : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await onSubmit(formData); // Llama a la función del padre
+    setIsSubmitting(false);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+      <div className="bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-lg mx-4 text-white animate-fade-in-up">
+        <h2 className="text-2xl font-bold mb-4 text-center text-indigo-400">Cuestionario Post-Sesión</h2>
+        <p className="text-center text-gray-400 mb-6">Por favor, completa el siguiente formulario sobre tu percepción durante la sesión que acaba de finalizar (ID: {sessionId}).</p>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="descripcion_trabajo" className="block text-gray-300 text-sm font-bold mb-2">
+              Describe brevemente la tarea que estabas realizando:
+            </label>
+            <textarea
+              id="descripcion_trabajo"
+              name="descripcion_trabajo"
+              value={formData.descripcion_trabajo}
+              onChange={handleChange}
+              rows={3}
+              className="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-gray-200 leading-tight focus:outline-none focus:shadow-outline border-gray-600"
+            />
+          </div>
+
+          <RangeInput label="Nivel de Sensación Emocional (Estrés)" value={formData.nivel_de_sensacion_estres || 1} onChange={(e) => handleChange({ ...e, target: { ...e.target, name: 'nivel_de_sensacion_estres' } })} />
+          <RangeInput label="Molestias Físicas Visuales" value={formData.molestias_fisicas_visual || 1} onChange={(e) => handleChange({ ...e, target: { ...e.target, name: 'molestias_fisicas_visual' } })} />
+          <RangeInput label="Otras Molestias Físicas" value={formData.molestias_fisicas_otros || 1} onChange={(e) => handleChange({ ...e, target: { ...e.target, name: 'molestias_fisicas_otros' } })} />
+          <RangeInput label="Dificultad de Concentración" value={formData.dificultad_concentracion || 1} onChange={(e) => handleChange({ ...e, target: { ...e.target, name: 'dificultad_concentracion' } })} />
+
+          <div className="flex items-center justify-end mt-6 gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
+            >
+              Omitir
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors disabled:bg-indigo-400"
+            >
+              {isSubmitting ? 'Enviando...' : 'Enviar Cuestionario'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
 const RecordingPage: React.FC = () => {
   const { isLoggedIn, trabajadorId, logout } = useAuth();
   const navigate = useNavigate();
+  const [isCuestionarioModalOpen, setIsCuestionarioModalOpen] = useState(false);
+  const [sessionToFinalizeId, setSessionToFinalizeId] = useState<number | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -22,10 +141,12 @@ const RecordingPage: React.FC = () => {
 
   // Configuration constants
   const API_BASE_URL = 'http://127.0.0.1:8000';
+  const BACKEND_CUESTIONARIO_URL = `${API_BASE_URL}/cuestionarios/`;
+
   const BACKEND_PREDICT_URL = `${API_BASE_URL}/predict/`;
   const BACKEND_START_SESSION_URL = `${API_BASE_URL}/sessions/start/`;
   const BACKEND_PAUSE_SESSION_URL = `${API_BASE_URL}/sessions/`; // Añadir para pausar/reanudar
-  const ANALYSIS_INTERVAL = 300;
+  const ANALYSIS_INTERVAL = 500;
   const DETECTION_INTERVAL = 100;
   const MODEL_URL = '/models';
 
@@ -94,33 +215,63 @@ const RecordingPage: React.FC = () => {
   }, []);
 
   // --- Stop Detection and Analysis Loops & Camera (including backend session finalization) ---
-  const stopDetectionAndAnalysis = useCallback(async () => {
-    // Primero, intentar finalizar la sesión en el backend si hay una activa
+    const stopDetectionAndAnalysis = useCallback(async () => {
+    // La sesión YA se finaliza en el backend, aquí solo abrimos el modal
     if (currentSessionId !== null) {
-      try {
-        console.log(`Intentando finalizar sesión ${currentSessionId} en el backend.`);
-        const response = await fetch(`${API_BASE_URL}/sessions/${currentSessionId}/end/`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado_grabacion: "Finalizada" }),
-        });
-        if (response.ok) {
-          console.log(`Sesión ${currentSessionId} finalizada en el backend.`);
-        } else {
-          console.error(`Error al finalizar sesión ${currentSessionId} en backend:`, await response.json());
-        }
-      } catch (error) {
-        console.error(`Error de red al finalizar sesión ${currentSessionId}:`, error);
-      } finally {
-        setCurrentSessionId(null); // Limpiar el ID de sesión del estado
-      }
+      console.log(`Grabación finalizada. Abriendo cuestionario para la sesión ID: ${currentSessionId}`);
+      setSessionToFinalizeId(currentSessionId); // Guarda el ID para el modal
+      setIsCuestionarioModalOpen(true); // Abre el modal
     }
+    // Detenemos los procesos del frontend
     stopAllMediaAndIntervals();
-    console.log('Detección y Análisis detenidos (incluyendo backend call).');
-  }, [currentSessionId, API_BASE_URL, stopAllMediaAndIntervals]);
+    console.log('Detección y Análisis detenidos (frontend).');
+  }, [currentSessionId, stopAllMediaAndIntervals]);
+
+  // AÑADE ESTA NUEVA FUNCIÓN
+  const handleCuestionarioSubmit = useCallback(async (formData: CuestionarioFormData) => {
+    if (!formData.sesion_id) {
+      console.error("No hay ID de sesión para enviar el cuestionario.");
+      setStatusMessage("Error: No se pudo enviar el cuestionario por falta de ID de sesión.");
+      return;
+    }
+    
+    try {
+      console.log("Enviando cuestionario al backend:", formData);
+      const response = await fetch(BACKEND_CUESTIONARIO_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Error al enviar el cuestionario.');
+      }
+      
+      console.log("Cuestionario enviado con éxito.");
+      setStatusMessage("Cuestionario registrado. ¡Gracias!");
+
+    } catch (error: any) {
+      console.error("Error al enviar el cuestionario:", error);
+      setStatusMessage(`Error: ${error.message}`);
+    } finally {
+      // Cierra el modal y limpia el estado sin importar el resultado
+      setIsCuestionarioModalOpen(false);
+      setSessionToFinalizeId(null);
+      setCurrentSessionId(null); // Limpiar la sesión activa actual
+    }
+  }, [BACKEND_CUESTIONARIO_URL]);
+  
+  // AÑADE ESTA NUEVA FUNCIÓN
+  const handleCloseModal = () => {
+    setIsCuestionarioModalOpen(false);
+    setSessionToFinalizeId(null);
+    setCurrentSessionId(null); // Limpiar la sesión activa actual también al omitir
+    setStatusMessage("Cuestionario omitido.");
+  };
+
 
   // --- Face Detection Loop (executed periodically) ---
-  // Mover esta función más arriba para que sea declarada antes de usarse
   const runDetection = useCallback(async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -161,7 +312,6 @@ const RecordingPage: React.FC = () => {
   }, [detectionOptions, modelsLoaded]);
 
   // --- Function to Analyze Detected Face (executed periodically) ---
-  // Mover esta función más arriba para que sea declarada antes de usarse
   const analyzeDetectedFace = useCallback(async (sessionId: number) => {
     if (!latestDetectionRef.current || isAnalyzing || !modelsLoaded || isRecordingPaused) {
       console.log('Saltando análisis: ', { sessionId, latestDetection: latestDetectionRef.current, isAnalyzing, modelsLoaded, isRecordingPaused });
@@ -463,6 +613,17 @@ const RecordingPage: React.FC = () => {
           {/* Navigation Menu */}
           <nav className="space-y-4">
             <button
+              onClick={() => navigate('/recording')} // Asumiendo que esta es tu página de grabación
+              className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
+            >
+              <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {/* Icono de Círculo (Record) */}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Grabar
+            </button>
+            <button
               onClick={() => navigate('/dashboard')}
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
@@ -472,6 +633,17 @@ const RecordingPage: React.FC = () => {
               </svg>
               Estadísticas
             </button>
+           <button
+            onClick={() => navigate('/historial')}
+            className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
+          >
+            <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {/* Icono de Documento con texto (History Log) */}
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Historial
+          </button>
+
             <button
               onClick={() => navigate('/settings')}
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
@@ -560,7 +732,7 @@ const RecordingPage: React.FC = () => {
             <button
               onClick={startRecording}
               // disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded} // Deshabilita si no hay cámara, ya grabando o modelos no cargados
-              // disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded} // Deshabilita si no hay cámara, ya grabando o modelos no cargados
+              disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded} // Deshabilita si no hay cámara, ya grabando o modelos no cargados
               className={`px-6 py-3 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-200
                 ${isCameraActive && currentSessionId === null && modelsLoaded ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-gray-600 cursor-not-allowed'}
               `}
@@ -598,6 +770,13 @@ const RecordingPage: React.FC = () => {
           <div id="resultArea" className="bg-gray-700 p-4 rounded text-gray-200 text-sm font-mono whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: resultAreaContent || "Esperando resultados..." }}></div>
         </div>
       </main>
+
+      <CuestionarioModal
+        isOpen={isCuestionarioModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleCuestionarioSubmit}
+        sessionId={sessionToFinalizeId || 0}
+      />
     </div>
   );
 };

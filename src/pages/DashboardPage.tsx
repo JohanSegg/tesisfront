@@ -164,7 +164,18 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Navigation Menu */}
-          <nav className="space-y-4">
+         <nav className="space-y-4">
+          <button
+              onClick={() => navigate('/recording')} // Asumiendo que esta es tu página de grabación
+              className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
+            >
+              <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {/* Icono de Círculo (Record) */}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Grabar
+            </button>
             <button
               onClick={() => navigate('/dashboard')}
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
@@ -175,6 +186,17 @@ const DashboardPage: React.FC = () => {
               </svg>
               Estadísticas
             </button>
+           <button
+            onClick={() => navigate('/historial')}
+            className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
+          >
+            <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {/* Icono de Documento con texto (History Log) */}
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Historial
+          </button>
+
             <button
               onClick={() => navigate('/settings')}
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
@@ -227,7 +249,7 @@ const DashboardPage: React.FC = () => {
             id="month-select"
             value={selectedMonth}
             onChange={handleMonthChange}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
           >
             {months.map(month => (
               <option key={month.value} value={month.value}>
@@ -244,7 +266,7 @@ const DashboardPage: React.FC = () => {
             id="year-select"
             value={selectedYear}
             onChange={handleYearChange}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
           >
             {years.map(year => (
               <option key={year} value={year}>
