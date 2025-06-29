@@ -390,7 +390,7 @@ const LoginPage: React.FC = () => {
 
           <div className="relative z-10 p-8 bg-gray-900 bg-opacity-80 rounded-xl shadow-lg border border-gray-700 max-w-md">
             <p className="text-xl italic text-gray-100 leading-relaxed mb-6">
-              "Imagine having a team of designers, developers, email marketers, and tax accountants behind you. That's how Lemon Squeezy feels, letting you focus on creating your digital products."
+              "Imagina tener ua aplicacion que peuda monitorear tu nivel de estress en tiempo real y propocioanrte estadisticas, eso es StressScan"
             </p>
             <div className="flex items-center">
               {/* Avatar del testimonio (ejemplo con SVG, puedes usar una imagen) */}
@@ -400,8 +400,8 @@ const LoginPage: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-lg font-semibold text-gray-50">Shahadat Rahman</p>
-                <p className="text-sm text-gray-400">@HiShahadat</p>
+                <p className="text-lg font-semibold text-gray-50">Carlos Torres</p>
+                <p className="text-sm text-gray-400">@carlostorress</p>
               </div>
             </div>
           </div>
