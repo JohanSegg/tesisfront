@@ -112,7 +112,7 @@ const LoginPage: React.FC = () => {
             >
               <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm-1.5-12c.828 0 1.5-.672 1.5-1.5S11.328 5 10.5 5 9 5.672 9 6.5s.672 1.5 1.5 1.5zm3 0c.828 0 1.5-.672 1.5-1.5S14.328 5 13.5 5 12 5.672 12 6.5s.672 1.5 1.5 1.5zm-3 6c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5zm3 0c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5z"/>
             </svg>
-            <h2 className="text-3xl font-semibold text-gray-50 mt-4">Sign in</h2>
+            <h2 className="text-3xl font-semibold text-gray-50 mt-4">Bienvenido</h2>
           </div>
 
           <div className="w-full max-w-sm">
@@ -195,7 +195,7 @@ const LoginPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Enlace para registrarse (no en la imagen, pero importante para tu app) */}
+                {/* Enlace para registrarse*/}
                 <p className="text-center text-sm text-gray-400 mt-6">
                   ¿No tienes una cuenta?{' '}
                   <button
@@ -409,5 +409,6 @@ const LoginPage: React.FC = () => {
     </div>
   );
 };
+
 
 export default LoginPage;
