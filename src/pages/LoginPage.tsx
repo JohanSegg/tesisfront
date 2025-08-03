@@ -4,12 +4,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, type RegisterFormData } from '../contexto/AuthContext'; // Importar RegisterFormData
 
-// Asegúrate de que tu archivo CSS principal (por ejemplo, index.css)
-// tenga las directivas de Tailwind:
-// @tailwind base;
-// @tailwind components;
-// @tailwind utilities;
-
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -412,3 +406,4 @@ const LoginPage: React.FC = () => {
 
 
 export default LoginPage;
+
