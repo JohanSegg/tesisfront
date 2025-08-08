@@ -1,7 +1,7 @@
-// Archivo CSS principal 
+/* Archivo CSS principal 
 // Posible optimización con directivas de Tailwind:
 // @tailwind base;
 // @tailwind components;
-// @tailwind utilities;
+// @tailwind utilities;*/
 
 @import "tailwindcss";
