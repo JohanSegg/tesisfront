@@ -136,26 +136,26 @@ const LoginPage: React.FC = () => {
             {!showRegisterForm ? (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-400 sr-only">Email address</label>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-400 sr-only">Usuario</label>
                   <input
                     type="text"
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    placeholder="Email address"
+                    placeholder="Usuario"
                     className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-400 sr-only">Password</label>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-400 sr-only">Contraseña</label>
                   <input
                     type="password"
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Password"
+                    placeholder="Contraseña"
                     className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -167,7 +167,7 @@ const LoginPage: React.FC = () => {
                   type="submit"
                   className="w-full py-3 mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#2B2B2B] focus:ring-purple-500 transition duration-150 ease-in-out"
                 >
-                  Sign in
+                  Iniciar Sesión
                 </button>
 
                 <div className="flex items-center justify-between mt-4 text-sm">
@@ -179,12 +179,12 @@ const LoginPage: React.FC = () => {
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-700"
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-gray-400">
-                      Remember me
+                      Recordarme
                     </label>
                   </div>
                   <div className="text-sm text-gray-400">
                     <a href="#" className="font-medium hover:text-purple-500 transition duration-150 ease-in-out" onClick={() => console.log('Forgot password clicked')}>
-                      Forgot your password?
+                      ¿Olvidaste tu contraseña?
                     </a>
                   </div>
                 </div>
@@ -406,4 +406,5 @@ const LoginPage: React.FC = () => {
 
 
 export default LoginPage;
+
 
