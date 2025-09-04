@@ -54,17 +54,28 @@ const LoginPage: React.FC = () => {
   };
 
   // Manejador para el envío del formulario de Registro
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError('');
     setRegisterSuccess('');
 
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Usamos variables temporales para mayor claridad
+    const weeklyHours = registerFormData.horas_trabajo_semanal;
+    const dailyHours = registerFormData.horas_descanso_dia;
+    const birthDate = registerFormData.fecha_de_nacimiento;
+
+    // Convertimos los datos al formato correcto que espera el backend
     const dataToSend: RegisterFormData = {
       ...registerFormData,
-      horas_trabajo_semanal: registerFormData.horas_trabajo_semanal === '' ? undefined : Number(registerFormData.horas_trabajo_semanal),
-      horas_descanso_dia: registerFormData.horas_descanso_dia === '' ? undefined : Number(registerFormData.horas_descanso_dia),
-      fecha_de_nacimiento: registerFormData.fecha_de_nacimiento === '' ? undefined : registerFormData.fecha_de_nacimiento,
+      // Si `weeklyHours` tiene un valor (no es undefined ni un string vacío), conviértelo a número. Si no, es undefined.
+      horas_trabajo_semanal: weeklyHours ? Number(weeklyHours) : undefined,
+      // Hacemos lo mismo para las horas de descanso
+      horas_descanso_dia: dailyHours ? Number(dailyHours) : undefined,
+      // Y también para la fecha de nacimiento
+      fecha_de_nacimiento: birthDate || undefined,
     };
+    // --- FIN DE LA CORRECCIÓN ---
 
     const success = await register(dataToSend);
     if (success) {
@@ -81,6 +92,7 @@ const LoginPage: React.FC = () => {
       setRegisterError('Error en el registro. El nombre de usuario podría ya existir o los datos son inválidos.');
     }
   };
+
 
 
   return (
