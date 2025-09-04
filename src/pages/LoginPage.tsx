@@ -4,12 +4,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, type RegisterFormData } from '../contexto/AuthContext'; // Importar RegisterFormData
 
-// Asegúrate de que tu archivo CSS principal (por ejemplo, index.css)
-// tenga las directivas de Tailwind:
-// @tailwind base;
-// @tailwind components;
-// @tailwind utilities;
-
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -112,7 +106,7 @@ const LoginPage: React.FC = () => {
             >
               <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm-1.5-12c.828 0 1.5-.672 1.5-1.5S11.328 5 10.5 5 9 5.672 9 6.5s.672 1.5 1.5 1.5zm3 0c.828 0 1.5-.672 1.5-1.5S14.328 5 13.5 5 12 5.672 12 6.5s.672 1.5 1.5 1.5zm-3 6c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5zm3 0c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5z"/>
             </svg>
-            <h2 className="text-3xl font-semibold text-gray-50 mt-4">Sign in</h2>
+            <h2 className="text-3xl font-semibold text-gray-50 mt-4">Bienvenido</h2>
           </div>
 
           <div className="w-full max-w-sm">
@@ -142,26 +136,26 @@ const LoginPage: React.FC = () => {
             {!showRegisterForm ? (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-400 sr-only">Email address</label>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-400 sr-only">Usuario</label>
                   <input
                     type="text"
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    placeholder="Email address"
+                    placeholder="Usuario"
                     className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-400 sr-only">Password</label>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-400 sr-only">Contraseña</label>
                   <input
                     type="password"
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Password"
+                    placeholder="Contraseña"
                     className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -173,7 +167,7 @@ const LoginPage: React.FC = () => {
                   type="submit"
                   className="w-full py-3 mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#2B2B2B] focus:ring-purple-500 transition duration-150 ease-in-out"
                 >
-                  Sign in
+                  Iniciar Sesión
                 </button>
 
                 <div className="flex items-center justify-between mt-4 text-sm">
@@ -185,17 +179,17 @@ const LoginPage: React.FC = () => {
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-700"
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-gray-400">
-                      Remember me
+                      Recordarme
                     </label>
                   </div>
                   <div className="text-sm text-gray-400">
                     <a href="#" className="font-medium hover:text-purple-500 transition duration-150 ease-in-out" onClick={() => console.log('Forgot password clicked')}>
-                      Forgot your password?
+                      ¿Olvidaste tu contraseña?
                     </a>
                   </div>
                 </div>
 
-                {/* Enlace para registrarse (no en la imagen, pero importante para tu app) */}
+                {/* Enlace para registrarse*/}
                 <p className="text-center text-sm text-gray-400 mt-6">
                   ¿No tienes una cuenta?{' '}
                   <button
@@ -410,4 +404,7 @@ const LoginPage: React.FC = () => {
   );
 };
 
+
 export default LoginPage;
+
+
