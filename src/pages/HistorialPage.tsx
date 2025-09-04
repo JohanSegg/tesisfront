@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexto/AuthContext'; // Asegúrate que la ruta sea correcta
+const API_BASE_URL = 'https://tesisback.onrender.com'; // Asegúrate de que esta URL sea correcta
+  //  const API_BASE_URL = 'http://127.0.0.1:8000';
 
 // --- Definición de Tipos para los Datos de la API ---
 interface Cuestionario {
@@ -170,7 +172,7 @@ const HistorialPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const apiUrl = `http://127.0.0.1:8000/trabajadores/${trabajadorId}/sesiones/summary/?start_date=${start}&end_date=${end}`;
+      const apiUrl = `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/?start_date=${start}&end_date=${end}`;
       const response = await fetch(apiUrl);
       if (!response.ok) {
         const errorData = await response.json();

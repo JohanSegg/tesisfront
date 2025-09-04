@@ -140,13 +140,15 @@ const RecordingPage: React.FC = () => {
   const [isRecordingPaused, setIsRecordingPaused] = useState<boolean>(false); // Nuevo estado para pausa de grabación
 
   // Configuration constants
-  const API_BASE_URL = 'http://127.0.0.1:8000';
+  //  const API_BASE_URL = 'http://127.0.0.1:8000';
+  const API_BASE_URL = 'https://tesisback.onrender.com';
+  
   const BACKEND_CUESTIONARIO_URL = `${API_BASE_URL}/cuestionarios/`;
 
   const BACKEND_PREDICT_URL = `${API_BASE_URL}/predict/`;
   const BACKEND_START_SESSION_URL = `${API_BASE_URL}/sessions/start/`;
   const BACKEND_PAUSE_SESSION_URL = `${API_BASE_URL}/sessions/`; // Añadir para pausar/reanudar
-  const ANALYSIS_INTERVAL = 500;
+  const ANALYSIS_INTERVAL = 1000;
   const DETECTION_INTERVAL = 100;
   const MODEL_URL = '/models';
 

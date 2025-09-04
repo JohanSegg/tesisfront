@@ -1,7 +1,9 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
 
-// Define la URL base de tu backend
-const API_BASE_URL = 'http://127.0.0.1:8000'; // Asegúrate de que esta URL sea correcta
+// Define la URL base de tu backend|||
+//const API_BASE_URL = 'http://127.0.0.1:8000'; // Asegúrate de que esta URL sea correcta
+const API_BASE_URL = 'https://tesisback.onrender.com'; // Asegúrate de que esta URL sea correcta
+  //  const API_BASE_URL = 'http://127.0.0.1:8000';
 
 // Define el tipo para los datos de registro (si aún los usas en el contexto)
 export interface RegisterFormData {
