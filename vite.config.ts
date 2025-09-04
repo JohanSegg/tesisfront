@@ -25,6 +25,6 @@ export default defineConfig({
 
     // La línea clave que soluciona el error de "Host not allowed":
     // Le dice a Vite que acepte peticiones desde el dominio público de Render
-    allowedHosts: ['https://tesisfront-lz3d.onrender.com']
+    allowedHosts: ["tesisfront-lz3d.onrender.com"]
   }
 })
