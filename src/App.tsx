@@ -1,28 +1,28 @@
-// src/App.tsx (Ejemplo)
+// src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexto/AuthContext'; // Importa tu AuthProvider
-import LoginPage from './pages/LoginPage';
-import RecordingPage from './pages/RecordingPage'; // Tu página de grabación
+import { AuthProvider } from './contexto/AuthContext'; // Importa AuthProvider
+import LoginPage from './pages/LoginPage'; // Páginas de Login, grabación, dashboard e historial
+import RecordingPage from './pages/RecordingPage';
 import DashboardPage from './pages/DashboardPage';
 import HistorialPage from './pages/HistorialPage';
-// Importa otros componentes/páginas según sea necesario
+
 
 const App: React.FC = () => {
   return (
     <Router>
-      <AuthProvider> {/* Envuelve toda tu aplicación con AuthProvider */}
+      <AuthProvider> {/* Envuelve toda la aplicación con AuthProvider */}
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          <Route path="/login" element={<LoginPage />} /> {/* Puedes tener /login también */}
+          <Route path="/login" element={<LoginPage />} /> {/**/}
           <Route path="/recording" element={<RecordingPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/Historial" element={<HistorialPage />} />
-          {/* Agrega otras rutas aquí */}
+          {/**/}
         </Routes>
       </AuthProvider>
     </Router>
   );
 };
 
-export default App;
+export default App; // exporta App.tsx como un componente llamado App 
