@@ -1,6 +1,6 @@
 /* src/styles/recordingpage.css */
 
-/* Asegurar que la fuente Inter se aplique globalmente */
+/*CUERPO*/
 body {
   font-family: 'Inter', sans-serif;
   margin: 0;
@@ -8,57 +8,57 @@ body {
   box-sizing: border-box;
 }
 
-/* Contenedor principal de la página de grabación */
+/* Contenedor principal de la pagina de grabación */
 .recording-page-container {
   min-height: 100vh;
   display: flex;
-  flex-direction: column; /* Organiza los elementos verticalmente */
+  flex-direction: column; 
   align-items: center;
-  justify-content: flex-start; /* Alinea al inicio para dejar espacio para el contenido */
-  background: linear-gradient(to bottom right, #4a00e0, #8e2de2); /* Un gradiente vibrante */
-  padding: 2rem; /* Espaciado general */
-  color: #f0f0f0; /* Color de texto claro */
+  justify-content: flex-start;
+  background: linear-gradient(to bottom right, #4a00e0, #8e2de2); /* gradientes */
+  padding: 2rem; 
+  color: #f0f0f0; /* Color de texto */
   text-align: center;
-  gap: 1.5rem; /* Espacio entre elementos principales */
+  gap: 1.5rem; 
 }
 
 /* Título de la página */
 .recording-page-container h1 {
-  font-size: 2.5rem; /* text-4xl */
-  font-weight: 800; /* font-extrabold */
-  color: #ffffff; /* text-white */
-  margin-bottom: 1.5rem; /* mb-6 */
+  font-size: 2.5rem; 
+  font-weight: 800; /* fuente extrabold */
+  color: #ffffff; 
+  margin-bottom: 1.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Sombra para el texto */
 }
 
 /* Contenedor de controles (botones) */
 .controls {
-  margin-bottom: 1.5rem; /* mb-6 */
+  margin-bottom: 1.5rem; 
 }
 
-/* Botón de Iniciar/Detener Análisis */
+/* Botón de iniciar/detener analisis */
 .control-button {
-  background: linear-gradient(to right, #00c6ff, #0072ff); /* Gradiente azul */
+  background: linear-gradient(to right, #00c6ff, #0072ff); 
   color: white;
-  font-weight: 700; /* font-bold */
-  padding: 0.75rem 2rem; /* py-3 px-8 */
-  border-radius: 0.75rem; /* rounded-xl */
+  font-weight: 700; 
+  padding: 0.75rem 2rem; 
+  border-radius: 0.75rem; 
   border: none;
   cursor: pointer;
-  font-size: 1.125rem; /* text-lg */
+  font-size: 1.125rem; 
   transition: all 0.3s ease-in-out;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   outline: none;
 }
 
 .control-button:hover:not(:disabled) {
-  background: linear-gradient(to right, #00b0e0, #0056cc); /* Gradiente más oscuro al hover */
-  transform: translateY(-2px); /* Pequeño efecto de elevación */
+  background: linear-gradient(to right, #00b0e0, #0056cc); 
+  transform: translateY(-2px); 
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 .control-button:disabled {
-  background: #6b7280; /* bg-gray-500 */
+  background: #6b7280; 
   cursor: not-allowed;
   opacity: 0.7;
   box-shadow: none;
@@ -66,9 +66,9 @@ body {
 
 /* Mensaje de estado */
 .status-message {
-  font-size: 1rem; /* text-base */
-  color: #e0e0e0; /* text-gray-200 */
-  margin-bottom: 1.5rem; /* mb-6 */
+  font-size: 1rem; 
+  color: #e0e0e0; 
+  margin-bottom: 1.5rem; 
   font-weight: 500;
 }
 
@@ -76,13 +76,13 @@ body {
 .canvas-container {
   position: relative;
   width: 100%;
-  max-width: 600px; /* Limita el ancho máximo del canvas */
-  aspect-ratio: 4 / 3; /* Mantiene una relación de aspecto común para video */
+  max-width: 600px; /* ancho maximo del canvas */
+  aspect-ratio: 4 / 3; /* relación de aspecto */
   background-color: #000000; /* Fondo negro para el canvas */
-  border-radius: 1rem; /* rounded-xl */
-  overflow: hidden; /* Asegura que el contenido no se desborde */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); /* Sombra más pronunciada */
-  border: 4px solid #ffffff; /* Borde blanco para destacar */
+  border-radius: 1rem; 
+  overflow: hidden; 
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); 
+  border: 4px solid #ffffff; 
 }
 
 /* Estilos del canvas */
@@ -90,20 +90,20 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Ajusta el video para cubrir el canvas */
+  object-fit: cover; 
 }
 
 /* Área de resultados */
 .result-area {
   background-color: rgba(255, 255, 255, 0.1); /* Fondo semitransparente */
-  padding: 1.5rem; /* p-6 */
-  border-radius: 0.75rem; /* rounded-xl */
-  margin-top: 2rem; /* mt-8 */
+  padding: 1.5rem; 
+  border-radius: 0.75rem; 
+  margin-top: 2rem; 
   width: 100%;
-  max-width: 500px; /* Ancho máximo para los resultados */
-  color: #ffffff; /* Texto blanco */
-  font-size: 1.125rem; /* text-lg */
-  font-weight: 600; /* font-semibold */
+  max-width: 500px; 
+  color: #ffffff; 
+  font-size: 1.125rem; 
+  font-weight: 600; 
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   line-height: 1.6;
 }
