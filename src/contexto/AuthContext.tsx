@@ -1,11 +1,10 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
 
-// Define la URL base de tu backend|||
-//const API_BASE_URL = 'http://127.0.0.1:8000'; // Asegúrate de que esta URL sea correcta
-const API_BASE_URL = 'https://tesisback.onrender.com'; // Asegúrate de que esta URL sea correcta
-  //  const API_BASE_URL = 'http://127.0.0.1:8000';
+// Define la URL base del backend
 
-// Define el tipo para los datos de registro (si aún los usas en el contexto)
+const API_BASE_URL = 'https://tesisback.onrender.com'; //Para implementacion local: const API_BASE_URL = 'http://127.0.0.1:8000' 
+
+// Define el tipo de datos del registro 
 export interface RegisterFormData {
   nombre: string;
   username: string;
@@ -15,23 +14,24 @@ export interface RegisterFormData {
   estado_civil?: string;
   uso_de_anteojos: boolean;
   estudio_y_trabajo?: string;
-  horas_trabajo_semanal?: number;
-  horas_descanso_dia?: number;
+  horas_trabajo_semanal?: string; // Antes como "Number"
+  horas_descanso_dia?: string; // Antes como "Number"
 }
 
-// Define el tipo para el contexto de autenticación
+// Define el tipo de dato para el contexto de autenticación
 interface AuthContextType {
   isLoggedIn: boolean;
-  trabajadorId: number | null; // Añadido para almacenar el ID del trabajador
+  trabajadorId: number | null; // Guarda el ID del trabajador
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (formData: RegisterFormData) => Promise<boolean>; // Añadido para la función de registro
+  register: (formData: RegisterFormData) => Promise<boolean>; // Función de registro
 }
 
-// Crea el contexto de autenticación
+// MECANISMO DE AUTENTICACIÓN Y PERSISTENCIA
+// a. Crea el contexto de autenticación
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Hook personalizado para consumir el contexto de autenticación
+// b. Hook personalizado para consumir el contexto de autenticación
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -41,20 +41,20 @@ export const useAuth = () => {
   return context;
 };
 
-// Componente Proveedor de Autenticación
+// c. Componente Proveedor de Autenticación
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Inicializa el estado leyendo de sessionStorage
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     const storedLoggedIn = sessionStorage.getItem('isLoggedIn');
-    return storedLoggedIn === 'true'; // Convertir a booleano
+    return storedLoggedIn === 'true'; // Convierte a booleano
   });
 
   const [trabajadorId, setTrabajadorId] = useState<number | null>(() => {
     const storedTrabajadorId = sessionStorage.getItem('trabajadorId');
-    return storedTrabajadorId ? parseInt(storedTrabajadorId, 10) : null; // Convertir a número
+    return storedTrabajadorId ? parseInt(storedTrabajadorId, 10) : null; // Convierte a número
   });
 
-  // Efecto para sincronizar el estado con sessionStorage cada vez que cambian
+  //  d. Sincroniza el estado con sessionStorage cuando hay cambios
   useEffect(() => {
     sessionStorage.setItem('isLoggedIn', String(isLoggedIn));
     if (trabajadorId !== null) {
@@ -64,10 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isLoggedIn, trabajadorId]);
 
-  // Función de Login: realiza la llamada a la API del backend
+  // Función de Login
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/login/`, {
+      const response = await fetch(`${API_BASE_URL}/login/`, { // Uso del API del backend
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,10 +96,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Función de Registro: realiza la llamada a la API del backend
+  // Función de Registro
   const register = async (formData: RegisterFormData): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/register/`, {
+      const response = await fetch(`${API_BASE_URL}/register/`, { // Uso del API del backend
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,8 +126,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setIsLoggedIn(false);
     setTrabajadorId(null); // Limpia el ID del trabajador al cerrar sesión
-    sessionStorage.removeItem('isLoggedIn'); // Elimina de sessionStorage
-    sessionStorage.removeItem('trabajadorId'); // Elimina de sessionStorage
+    sessionStorage.removeItem('isLoggedIn'); 
+    sessionStorage.removeItem('trabajadorId'); 
   };
 
   // Proporciona el estado de autenticación y las funciones a los componentes hijos
