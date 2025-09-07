@@ -1,10 +1,20 @@
 // src/pages/RecordingPage.tsx
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import * as faceapi from 'face-api.js';
+import * as faceapi from 'face-api.js'; //Importa faceApi
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexto/AuthContext'; // Asegúrate de que esta ruta sea correcta
+import { useAuth } from '../contexto/AuthContext'; // Importa contexto de autenticacion
 
-// ELIMINA la importación de CSS: import './recordingpage.css';
+
+// 1. SECCION DEL CUESTIONARIO
+// --- Interfaz para los datos del formulario del cuestionario ---
+interface CuestionarioFormData {
+  sesion_id: number;
+  descripcion_trabajo?: string;
+  nivel_de_sensacion_estres?: number; 
+  molestias_fisicas_visual?: number;
+  molestias_fisicas_otros?: number;
+  dificultad_concentracion?: number;
+}
 
 interface CuestionarioModalProps {
   isOpen: boolean;
@@ -13,17 +23,7 @@ interface CuestionarioModalProps {
   sessionId: number;
 }
 
-// --- Interfaz para los datos del formulario del cuestionario ---
-interface CuestionarioFormData {
-  sesion_id: number;
-  descripcion_trabajo?: string;
-  nivel_de_sensacion_estres?: number; // Ajustado a "emocional" como en tu API
-  molestias_fisicas_visual?: number;
-  molestias_fisicas_otros?: number;
-  dificultad_concentracion?: number;
-}
-
-// --- Componente de Rango con Etiqueta (para los niveles 1-5) ---
+// --- Componente de rango con etiqueta para los niveles 1-5 ---
 const RangeInput: React.FC<{ label: string; value: number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; }> = ({ label, value, onChange }) => (
   <div className="mb-4">
     <label className="block text-gray-300 text-sm font-bold mb-2">{label}: <span className="text-indigo-400 font-extrabold">{value}</span></label>
@@ -39,7 +39,7 @@ const RangeInput: React.FC<{ label: string; value: number; onChange: (e: React.C
 );
 
 
-// --- Componente del Modal del Cuestionario ---
+// --- Componente del modal del cuestionario (valores por defecto) ---
 const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, onSubmit, sessionId }) => {
   const [formData, setFormData] = useState<CuestionarioFormData>({
     sesion_id: sessionId,
@@ -51,7 +51,7 @@ const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Actualizar el sesion_id si cambia la prop
+  // Actualizar el sesion_id si cambia su propiedad
   useEffect(() => {
     setFormData(prev => ({ ...prev, sesion_id: sessionId }));
   }, [sessionId]);
@@ -67,12 +67,13 @@ const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await onSubmit(formData); // Llama a la función del padre
+    await onSubmit(formData); // Llama a la función Padre
     setIsSubmitting(false);
   };
 
   if (!isOpen) return null;
 
+  // PARTE VISUAL DEL CUESTIONARIO
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-lg mx-4 text-white animate-fade-in-up">
@@ -122,7 +123,7 @@ const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, 
   );
 };
 
-
+// 2. SECCION DE LA GRABACION
 const RecordingPage: React.FC = () => {
   const { isLoggedIn, trabajadorId, logout } = useAuth();
   const navigate = useNavigate();
@@ -134,25 +135,23 @@ const RecordingPage: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string>('Cargando modelos de detección facial...');
   const [resultAreaContent, setResultAreaContent] = useState<string>('');
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false); // Flag for backend analysis
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false); // Estado para verificar si se esta analizando
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
-  const [isRecordingPaused, setIsRecordingPaused] = useState<boolean>(false); // Nuevo estado para pausa de grabación
+  const [isRecordingPaused, setIsRecordingPaused] = useState<boolean>(false); // Estado para pausa de grabación
 
-  // Configuration constants
-  //  const API_BASE_URL = 'http://127.0.0.1:8000';
-  const API_BASE_URL = 'https://tesisback.onrender.com';
-  
+
+  // Configuration de constantes
+  const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
   const BACKEND_CUESTIONARIO_URL = `${API_BASE_URL}/cuestionarios/`;
-
   const BACKEND_PREDICT_URL = `${API_BASE_URL}/predict/`;
   const BACKEND_START_SESSION_URL = `${API_BASE_URL}/sessions/start/`;
-  const BACKEND_PAUSE_SESSION_URL = `${API_BASE_URL}/sessions/`; // Añadir para pausar/reanudar
+  const BACKEND_PAUSE_SESSION_URL = `${API_BASE_URL}/sessions/`; 
   const ANALYSIS_INTERVAL = 1000;
   const DETECTION_INTERVAL = 100;
   const MODEL_URL = '/models';
 
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+ const mediaStreamRef = useRef<MediaStream | null>(null);
   const detectionIntervalIdRef = useRef<NodeJS.Timeout | null>(null);
   const analysisIntervalIdRef = useRef<NodeJS.Timeout | null>(null);
   const latestDetectionRef = useRef<faceapi.FaceDetection | null>(null);
@@ -162,7 +161,7 @@ const RecordingPage: React.FC = () => {
     scoreThreshold: 0.5,
   });
 
-  // --- Load Face-API.js Models ---
+  // --- 1. Funcion que carga los modelos de Face-Api.js ---
   const loadModels = useCallback(async () => {
     try {
       setStatusMessage('Cargando modelos de detección facial...');
@@ -177,7 +176,7 @@ const RecordingPage: React.FC = () => {
     }
   }, []);
 
-  // --- Stop All Media and Intervals (reusable) ---
+// -- 2. Funcion que detiene todos los medios (Frontend) ---
   const stopAllMediaAndIntervals = useCallback(() => {
     console.log(111);
     if (detectionIntervalIdRef.current !== null) {
@@ -210,26 +209,26 @@ const RecordingPage: React.FC = () => {
       }
     }
     setIsCameraActive(false);
-    setIsRecordingPaused(false); // Reset pausa
+    setIsRecordingPaused(false); 
     setStatusMessage('Cámara y Análisis detenidos.');
     setResultAreaContent('');
     console.log('Medios e intervalos detenidos.');
   }, []);
 
-  // --- Stop Detection and Analysis Loops & Camera (including backend session finalization) ---
+  // --- 3. Funcion que detiene todos los medios (backend) ---
     const stopDetectionAndAnalysis = useCallback(async () => {
-    // La sesión YA se finaliza en el backend, aquí solo abrimos el modal
+    // La sesión (grabacion) se finaliza y se abre el modal
     if (currentSessionId !== null) {
       console.log(`Grabación finalizada. Abriendo cuestionario para la sesión ID: ${currentSessionId}`);
       setSessionToFinalizeId(currentSessionId); // Guarda el ID para el modal
       setIsCuestionarioModalOpen(true); // Abre el modal
     }
-    // Detenemos los procesos del frontend
+    // Llamamos el detenimiento de los procesos del frontend
     stopAllMediaAndIntervals();
     console.log('Detección y Análisis detenidos (frontend).');
   }, [currentSessionId, stopAllMediaAndIntervals]);
 
-  // AÑADE ESTA NUEVA FUNCIÓN
+  // --- 4. Manejador por si no se encuentra un sesion_id ---
   const handleCuestionarioSubmit = useCallback(async (formData: CuestionarioFormData) => {
     if (!formData.sesion_id) {
       console.error("No hay ID de sesión para enviar el cuestionario.");
@@ -260,20 +259,20 @@ const RecordingPage: React.FC = () => {
       // Cierra el modal y limpia el estado sin importar el resultado
       setIsCuestionarioModalOpen(false);
       setSessionToFinalizeId(null);
-      setCurrentSessionId(null); // Limpiar la sesión activa actual
+      setCurrentSessionId(null); // Limpia la sesion activa actual
     }
   }, [BACKEND_CUESTIONARIO_URL]);
   
-  // AÑADE ESTA NUEVA FUNCIÓN
+  // Omitir el cuestionario
   const handleCloseModal = () => {
     setIsCuestionarioModalOpen(false);
     setSessionToFinalizeId(null);
-    setCurrentSessionId(null); // Limpiar la sesión activa actual también al omitir
+    setCurrentSessionId(null); 
     setStatusMessage("Cuestionario omitido.");
   };
 
 
-  // --- Face Detection Loop (executed periodically) ---
+  // --- 5. Funcion que sirve como bucle para la deteccion de rostro ---
   const runDetection = useCallback(async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -313,7 +312,8 @@ const RecordingPage: React.FC = () => {
     }
   }, [detectionOptions, modelsLoaded]);
 
-  // --- Function to Analyze Detected Face (executed periodically) ---
+  //  --- 6. Funcion que sirve como bucle para analizar el rostro detectado. ---
+  //  --- Maneja varios errores ---
   const analyzeDetectedFace = useCallback(async (sessionId: number) => {
     if (!latestDetectionRef.current || isAnalyzing || !modelsLoaded || isRecordingPaused) {
       console.log('Saltando análisis: ', { sessionId, latestDetection: latestDetectionRef.current, isAnalyzing, modelsLoaded, isRecordingPaused });
@@ -398,10 +398,10 @@ const RecordingPage: React.FC = () => {
   }, [isAnalyzing, modelsLoaded, isRecordingPaused, BACKEND_PREDICT_URL]);
 
 
-  // --- Start Camera Stream Only ---
+  // --- 7. Inicializa la camara ---
   const startCamera = useCallback(async () => {
-    if (isCameraActive) return; // Ya activa
-    if (!modelsLoaded) {
+    if (isCameraActive) return; // camara activa
+    if (!modelsLoaded) {  // modelo no cargado
       setStatusMessage('Error: Los modelos de detección facial aún no se han cargado. Por favor, espera.');
       return;
     }
@@ -422,10 +422,10 @@ const RecordingPage: React.FC = () => {
         };
       }
 
-      // Manejar el fin del stream (ej. usuario cierra cámara)
+      // Manejar fin del stream 
       stream.getVideoTracks()[0].onended = async () => {
         console.log("Stream de cámara finalizado por el usuario o sistema.");
-        // Si hay una sesión activa en el backend, la marcamos como "Cancelada"
+        // Si hay una sesion activa en el backend se marca como "Cancelada"
         if (currentSessionId !== null) {
           try {
             console.log('Intentando cancelar sesión en backend con ID:', currentSessionId);
@@ -441,7 +441,7 @@ const RecordingPage: React.FC = () => {
           } catch (error) {
             console.error(`Error de red al cancelar sesión ${currentSessionId}:`, error);
           } finally {
-            setCurrentSessionId(null); // Limpiar el ID de sesión del estado
+            setCurrentSessionId(null); // Limpia el estado de sessionid
           }
         }
         stopAllMediaAndIntervals();
@@ -456,7 +456,7 @@ const RecordingPage: React.FC = () => {
   }, [modelsLoaded, isCameraActive, stopAllMediaAndIntervals, currentSessionId, API_BASE_URL]);
 
 
-  // --- Start Recording (Backend Session & Analysis Loops) ---
+  // --- 8. Funcion que inicia las "grabaciones/sesiones" y maneja bucles en estas ---
   const startRecording = useCallback(async () => {
     if (!isCameraActive) {
       setStatusMessage('Error: La cámara no está activa. Inicia la cámara primero.');
@@ -495,10 +495,10 @@ const RecordingPage: React.FC = () => {
 
       const sessionIdForIntervals = sessionData.sesion_id;
 
-      // Usar las funciones que ya están declaradas arriba
+      // Usa las funciones que ya estan declaradas arriba
       detectionIntervalIdRef.current = setInterval(runDetection, DETECTION_INTERVAL);
       analysisIntervalIdRef.current = setInterval(() => analyzeDetectedFace(sessionIdForIntervals), ANALYSIS_INTERVAL);
-      setIsRecordingPaused(false); // Asegúrate de que no esté pausada al iniciar
+      setIsRecordingPaused(false); 
       console.log(`Grabación iniciada. Detección cada ${DETECTION_INTERVAL}ms, Análisis cada ${ANALYSIS_INTERVAL}ms.`);
 
     } catch (err: any) {
@@ -510,14 +510,14 @@ const RecordingPage: React.FC = () => {
   }, [isCameraActive, modelsLoaded, trabajadorId, navigate, runDetection, analyzeDetectedFace, BACKEND_START_SESSION_URL]);
 
 
-  // --- Toggle Pause/Resume Recording ---
+  // --- 9. Funcion que cambia estados de pausa y resumen de la grabaciom---
   const togglePauseRecording = useCallback(async () => {
     if (currentSessionId === null) {
       setStatusMessage('No hay una sesión de grabación activa para pausar/reanudar.');
       return;
     }
 
-    const newState = !isRecordingPaused; // Nuevo estado (true para pausar, false para reanudar)
+    const newState = !isRecordingPaused; // Nuevo estado: 'true' para pausar, 'false' para reanudar
     const newStatus = newState ? "Pausada" : "En Curso";
 
     try {
@@ -535,7 +535,7 @@ const RecordingPage: React.FC = () => {
 
       setIsRecordingPaused(newState);
       if (newState) {
-        // Pausar: detener el intervalo de análisis (pero dejar detección)
+        // Pausar: detiene el analisis pero mantiene detección
         if (analysisIntervalIdRef.current) {
           clearInterval(analysisIntervalIdRef.current);
           analysisIntervalIdRef.current = null;
@@ -543,12 +543,12 @@ const RecordingPage: React.FC = () => {
         }
         setStatusMessage('Grabación pausada.');
       } else {
-        // Reanudar: reiniciar el intervalo de análisis
-        if (detectionIntervalIdRef.current === null) { // Asegurarse de que detección esté activa
-             detectionIntervalIdRef.current = setInterval(runDetection, DETECTION_INTERVAL); // Usar función ya declarada
+        // Reanudar: reinicia el análisis
+        if (detectionIntervalIdRef.current === null) { 
+             detectionIntervalIdRef.current = setInterval(runDetection, DETECTION_INTERVAL); 
         }
         if (analysisIntervalIdRef.current === null) {
-          analysisIntervalIdRef.current = setInterval(() => analyzeDetectedFace(currentSessionId), ANALYSIS_INTERVAL); // Usar función ya declarada
+          analysisIntervalIdRef.current = setInterval(() => analyzeDetectedFace(currentSessionId), ANALYSIS_INTERVAL); 
         }
         setStatusMessage('Grabación reanudada. Analizando rostro...');
       }
@@ -561,7 +561,7 @@ const RecordingPage: React.FC = () => {
   }, [currentSessionId, isRecordingPaused, BACKEND_PAUSE_SESSION_URL, runDetection, analyzeDetectedFace]);
 
 
-  // --- Effects for component lifecycle ---
+  // --- Hook para manejar logeo ---
   useEffect(() => {
     if (!isLoggedIn) {
       navigate('/login');
@@ -570,11 +570,11 @@ const RecordingPage: React.FC = () => {
     loadModels();
 
     return () => {
-      stopAllMediaAndIntervals(); // Limpiar al desmontar
+      stopAllMediaAndIntervals(); // detiene medios
     };
   }, [isLoggedIn, navigate, loadModels, stopAllMediaAndIntervals]);
 
-  // Adjust canvas size if the window resizes (basic)
+  // Ajusta canvas si la ventana cambia de tamaño 
   useEffect(() => {
     const handleResize = () => {
       if (videoRef.current && canvasRef.current && videoRef.current.videoWidth > 0) {
@@ -594,9 +594,12 @@ const RecordingPage: React.FC = () => {
     navigate('/login');
   }, [logout, navigate, stopDetectionAndAnalysis]);
 
+
+
+// PARTE VISUAL
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100">
-      {/* Sidebar */}
+      {/* Barra lateral */}
       <aside className="w-64 bg-gray-800 p-6 flex flex-col justify-between shadow-lg">
         <div>
           {/* Logo */}
@@ -612,21 +615,21 @@ const RecordingPage: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-50 mt-2">Stress Detection App</h2>
           </div>
 
-          {/* Navigation Menu */}
+        {/*Menu de navegacion */}
           <nav className="space-y-4">
             <button
-              onClick={() => navigate('/recording')} // Asumiendo que esta es tu página de grabación
+              onClick={() => navigate('/recording')} // 1. Pagina de grabación
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {/* Icono de Círculo (Record) */}
+                {/* Icono de grabacion */}
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Grabar
             </button>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/dashboard')} // 2. Dashboard
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -636,18 +639,18 @@ const RecordingPage: React.FC = () => {
               Estadísticas
             </button>
            <button
-            onClick={() => navigate('/historial')}
+            onClick={() => navigate('/historial')} // 3. Historial
             className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
           >
             <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {/* Icono de Documento con texto (History Log) */}
+              {/* Icono de historial */}
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Historial
           </button>
 
             <button
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/settings')} // 4. Configuracion
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -657,7 +660,7 @@ const RecordingPage: React.FC = () => {
               Configuración
             </button>
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/profile')} // 5. Perfil
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -668,7 +671,7 @@ const RecordingPage: React.FC = () => {
           </nav>
         </div>
 
-        {/* Logout Button */}
+        {/* Boton Logout */}
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center p-3 mt-8 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-200"
@@ -680,11 +683,11 @@ const RecordingPage: React.FC = () => {
         </button>
       </aside>
 
-      {/* Main Content Area */}
+      {/* --- CONTENIDO PRINCIPAL DE GRABACION --- */}
       <main className="flex-1 p-8 overflow-auto">
         <h1 className="text-4xl font-extrabold text-white mb-6 text-center">Detector de Estrés Facial Automático</h1>
 
-        {/* Status and Info Messages */}
+        {/* a. Mensajes informativos y de estatus*/}
         <div className="bg-gray-800 p-4 rounded-lg shadow-inner mb-6 text-center">
           <p id="statusMessage" className={`text-lg font-medium ${statusMessage.includes('Error') ? 'text-red-400' : 'text-blue-400'}`}>
             {statusMessage}
@@ -701,15 +704,14 @@ const RecordingPage: React.FC = () => {
           )}
         </div>
 
-        {/* Camera Feed and Controls */}
+        {/* b. Canvas, Camara y sus controles */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-xl flex flex-col items-center">
           <div className="relative w-full max-w-2xl bg-black rounded-lg overflow-hidden border border-gray-700 shadow-2xl">
-            {/* The video element is only used as a source for the canvas, hidden */}
             <video id="videoFeed" ref={videoRef} autoPlay muted className="hidden"></video>
 
-            {/* This is the canvas where we will draw the video and bounding boxes */}
+            {/*b1. canvas donde se muestra el video*/}
             <canvas id="displayCanvas" ref={canvasRef} className="w-full h-auto block transform scale-x-[-1]"></canvas>
-            {/* Placeholder if camera is not active */}
+            {/* Placeholder por si la camara no esta activa*/}
             {!isCameraActive && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-70">
                 <span className="text-gray-400 text-xl">Cámara Inactiva</span>
@@ -718,7 +720,7 @@ const RecordingPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 mt-6">
-            {/* Botón para Encender/Apagar Cámara */}
+            {/* b2. Boton para encender/apagar camara */}
             <button
               onClick={isCameraActive ? stopAllMediaAndIntervals : startCamera}
               disabled={!modelsLoaded}
@@ -730,11 +732,10 @@ const RecordingPage: React.FC = () => {
               {isCameraActive ? 'Apagar Cámara' : 'Encender Cámara'}
             </button>
 
-            {/* Botón para Iniciar Grabación (Análisis) */}
+            {/* b3. Boton para iniciar grabacion (Análisis) */}
             <button
               onClick={startRecording}
-              // disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded} // Deshabilita si no hay cámara, ya grabando o modelos no cargados
-              disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded} // Deshabilita si no hay cámara, ya grabando o modelos no cargados
+              disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded} // Deshabilita boton si no hay camara grabando o modelos no cargados
               className={`px-6 py-3 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-200
                 ${isCameraActive && currentSessionId === null && modelsLoaded ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-gray-600 cursor-not-allowed'}
               `}
@@ -742,10 +743,10 @@ const RecordingPage: React.FC = () => {
               Iniciar Grabación
             </button>
 
-            {/* Botón para Pausar/Reanudar Grabación */}
+            {/* b4. Boton para pausar o reanudar grabacion */}
             <button
               onClick={togglePauseRecording}
-              disabled={currentSessionId === null || !isCameraActive} // Deshabilita si no hay sesión activa o cámara inactiva
+              disabled={currentSessionId === null || !isCameraActive} // Deshabilita si la sesion seson o la  camara estan inactivas
               className={`px-6 py-3 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-200
                 ${currentSessionId !== null && isCameraActive ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' : 'bg-gray-600 cursor-not-allowed'}
               `}
@@ -753,10 +754,10 @@ const RecordingPage: React.FC = () => {
               {isRecordingPaused ? 'Reanudar Grabación' : 'Pausar Grabación'}
             </button>
 
-            {/* Botón para Terminar Grabación */}
+            {/* b5. Boton para Terminar grabacion */}
             <button
               onClick={stopDetectionAndAnalysis}
-              disabled={currentSessionId === null} // Deshabilita si no hay sesión activa
+              disabled={currentSessionId === null} // Deshabilita si no hay sesion activa
               className={`px-6 py-3 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-200
                 ${currentSessionId !== null ? 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-500' : 'bg-gray-600 cursor-not-allowed'}
               `}
@@ -766,7 +767,7 @@ const RecordingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Result Area */}
+        {/* c. Zona de resultados */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-inner mt-6">
           <h2 className="text-xl font-semibold text-white mb-4">Resultados del Análisis</h2>
           <div id="resultArea" className="bg-gray-700 p-4 rounded text-gray-200 text-sm font-mono whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: resultAreaContent || "Esperando resultados..." }}></div>
