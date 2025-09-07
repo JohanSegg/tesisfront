@@ -1,5 +1,4 @@
-// vite.config.ts (Versión Corregida)
-
+// vite.config.ts 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -10,21 +9,15 @@ export default defineConfig({
   
   // Configuración para el servidor de DESARROLLO (`npm run dev`)
   server: {
-    host: '0.0.0.0', // Buena práctica para accesibilidad en la red local
+    host: '0.0.0.0', 
   },
 
   // Configuración para el servidor de PREVISUALIZACIÓN (`npm run preview`)
-  // Esta es la que usa Render para servir tu aplicación
+  // Esta es la que usara Render
   preview: {
-    // Le decimos que escuche en el puerto que Render le asigne
     port:  8080,
     strictPort: true,
-
-    // Le decimos que escuche en todas las interfaces de red
-    host: "0.0.0.0",
-
-    // La línea clave que soluciona el error de "Host not allowed":
-    // Le dice a Vite que acepte peticiones desde el dominio público de Render
-    allowedHosts: ["tesisfront-lz3d.onrender.com"]
+    host: "0.0.0.0", // Escuchar todas las interfaces de red
+    allowedHosts: ["tesisfront-lz3d.onrender.com"] // Aceptar peticiones desde el dominio público de Render
   }
 })
