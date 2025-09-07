@@ -1,3 +1,4 @@
+// src/pages/DashboardPage.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,11 +12,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useAuth } from '../contexto/AuthContext'; // Asegúrate que la ruta sea correcta
-// import './dashboardpage.css'; // Puedes eliminar esto si Tailwind lo maneja todo
+import { useAuth } from '../contexto/AuthContext'; 
 
-// --- Definición de Tipos para los Datos de la API ---
-interface MonthlyOverallSummary {
+
+// Definición de Tipos de Datos de la API
+interface ResumenMensual {
   trabajador_id: number;
   month: number;
   year: number;
@@ -27,14 +28,14 @@ interface MonthlyOverallSummary {
   dias_con_actividad: number;
 }
 
-interface DailyAggregatedSummary {
+interface ResumenDiario {
   fecha: string; // La API devuelve 'YYYY-MM-DD'
   porcentaje_estres_promedio: number | null;
   duracion_total_grabacion_segundos: number | null;
   numero_sesiones: number;
 }
 
-// --- Helper para formatear segundos a HH:MM:SS ---
+// --- Formatear segundos a HH:MM:SS ---
 const formatSecondsToHHMMSS = (totalSeconds: number | null | undefined): string => {
   if (totalSeconds == null || totalSeconds < 0) {
     return '00:00:00';
@@ -46,11 +47,9 @@ const formatSecondsToHHMMSS = (totalSeconds: number | null | undefined): string 
   return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 };
 
-// --- Constantes ---
-// const API_BASE_URL = 'http://127.0.0.1:8000';
-const API_BASE_URL = 'https://tesisback.onrender.com'; // Asegúrate de que esta URL sea correcta
-  //  const API_BASE_URL = 'http://127.0.0.1:8000';
 
+// --- Constantes ---
+const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i); // Últimos 5 años
 const months = [
@@ -69,8 +68,8 @@ const DashboardPage: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
 
-  const [overallData, setOverallData] = useState<MonthlyOverallSummary | null>(null);
-  const [dailyData, setDailyData] = useState<DailyAggregatedSummary[]>([]);
+  const [overallData, setOverallData] = useState<ResumenMensual | null>(null);
+  const [dailyData, setDailyData] = useState<ResumenDiario[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +86,7 @@ const DashboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch Overall Data
+        // Obtiene todos los datos (mensualmente)
         const overallResponse = await fetch(
           `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/monthly/overall/?month=${selectedMonth}&year=${selectedYear}`
         );
@@ -95,10 +94,10 @@ const DashboardPage: React.FC = () => {
           const errorData = await overallResponse.json();
           throw new Error(`Error obteniendo resumen mensual: ${errorData.detail || overallResponse.statusText}`);
         }
-        const overallResult: MonthlyOverallSummary = await overallResponse.json();
+        const overallResult: ResumenMensual = await overallResponse.json();
         setOverallData(overallResult);
 
-        // Fetch Daily Aggregated Data
+        // Obtiene datos diarios
         const dailyResponse = await fetch(
           `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/monthly/daily-aggregated/?month=${selectedMonth}&year=${selectedYear}`
         );
@@ -106,7 +105,7 @@ const DashboardPage: React.FC = () => {
           const errorData = await dailyResponse.json();
           throw new Error(`Error obteniendo datos diarios: ${errorData.detail || dailyResponse.statusText}`);
         }
-        const dailyResult: DailyAggregatedSummary[] = await dailyResponse.json();
+        const dailyResult: ResumenDiario[] = await dailyResponse.json();
         setDailyData(dailyResult);
 
       } catch (err) {
@@ -125,14 +124,14 @@ const DashboardPage: React.FC = () => {
     fetchData();
   }, [trabajadorId, selectedMonth, selectedYear]);
 
-  // Memoize chart data para evitar re-renderizados innecesarios
+  // Memoriza los graficos que evitan renderizados innecesarios
   const chartData = useMemo(() => {
     return dailyData.map(day => ({
       fecha: new Date(day.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }), // Formato DD/MM
       'Estrés Promedio (%)': day.porcentaje_estres_promedio != null ? parseFloat(day.porcentaje_estres_promedio.toFixed(2)) : null,
       'Duración Grabación (seg)': day.duracion_total_grabacion_segundos,
       'Nº Sesiones': day.numero_sesiones,
-    })).sort((a, b) => new Date(a.fecha.split('/').reverse().join('-')).getTime() - new Date(b.fecha.split('/').reverse().join('-')).getTime()); // Asegurar orden
+    })).sort((a, b) => new Date(a.fecha.split('/').reverse().join('-')).getTime() - new Date(b.fecha.split('/').reverse().join('-')).getTime()); // Establece un orden
   }, [dailyData]);
 
 
@@ -144,13 +143,14 @@ const DashboardPage: React.FC = () => {
     setSelectedYear(parseInt(event.target.value, 10));
   };
   const handleLogout = useCallback(() => {
-    // stopDetectionAndAnalysis(); // Detener todo antes de cerrar sesión
+    // stopDetectionAndAnalysis();
     // logout();
     navigate('/login');
   }, [ navigate]);
   
+  // PARTE VISUAL
   return (
-    <div className="flex h-screen bg-gray-900 text-gray-100"> {/* Estilo base de RecordingPage */}
+    <div className="flex h-screen bg-gray-900 text-gray-100"> {/* Estilo base similar a RecordingPage */}
     <aside className="w-64 bg-gray-800 p-6 flex flex-col justify-between shadow-lg">
         <div>
           {/* Logo */}
@@ -166,21 +166,21 @@ const DashboardPage: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-50 mt-2">Stress Detection App</h2>
           </div>
 
-          {/* Navigation Menu */}
+          {/*Menu de navegacion */}
          <nav className="space-y-4">
           <button
-              onClick={() => navigate('/recording')} // Asumiendo que esta es tu página de grabación
+              onClick={() => navigate('/recording')} // 1. Pagina de grabación
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {/* Icono de Círculo (Record) */}
+                {/* Icono de grabacion */}
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Grabar
             </button>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/dashboard')} // 2. Dashboard propiamente dicho :P
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -190,18 +190,18 @@ const DashboardPage: React.FC = () => {
               Estadísticas
             </button>
            <button
-            onClick={() => navigate('/historial')}
+            onClick={() => navigate('/historial')} // 3. Historial
             className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
           >
             <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {/* Icono de Documento con texto (History Log) */}
+              {/* Icono de historial */}
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Historial
           </button>
 
             <button
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/settings')} // 4. Configuracion
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -211,7 +211,7 @@ const DashboardPage: React.FC = () => {
               Configuración
             </button>
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/profile')} // 5. Perfil
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -222,7 +222,7 @@ const DashboardPage: React.FC = () => {
           </nav>
         </div>
 
-        {/* Logout Button */}
+        {/* Boton Logout */}
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center p-3 mt-8 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-200"
@@ -234,16 +234,14 @@ const DashboardPage: React.FC = () => {
         </button>
       </aside>
       
-      {/* Contenido Principal del Dashboard */}
+      {/* --- CONTENIDO PRINCIPAL DEL DASHBOARD --- */}
       <main className="flex-1 p-4 md:p-8 overflow-auto bg-gray-100"> {/* Fondo claro para el contenido */}
         <header className="mb-8">
-          {/* El texto aquí debería ser oscuro para contrastar con bg-gray-100 */}
           <h1 className="text-3xl font-bold text-gray-800">Estadísticas Mensuales de Estrés Facial</h1>
         </header>
 
-        {/* --- Filtros --- */}
+        {/* a. Filtros */}
         <div className="mb-6 p-4 bg-white shadow rounded-lg flex flex-col sm:flex-row gap-4 items-center">
-          {/* ... (filtros como antes, el texto de las labels será oscuro por defecto) ... */}
           <div className="flex-1 w-full sm:w-auto">
           <label htmlFor="month-select" className="block text-sm font-medium text-gray-700 mb-1">
             Mes:
@@ -280,7 +278,7 @@ const DashboardPage: React.FC = () => {
         </div>
         </div>
 
-        {/* --- Mensajes de Estado y Contenido --- */}
+        {/* b. Mensajes de Estado y Contenido */}
         {loading && <p className="text-center text-xl text-gray-600 p-10">Cargando datos, por favor espere...</p>}
         
         {!loading && error && <p className="text-center text-red-600 bg-red-100 p-4 rounded-md shadow">Error: {error}</p>}
@@ -297,9 +295,8 @@ const DashboardPage: React.FC = () => {
           <>
             {overallData ? (
               <>
-                {/* --- Cards de Resumen Mensual --- */}
+                {/* c. Cards de Resumen Mensual */}
                 <section className="mb-8">
-                   {/* ... (cards como antes, el texto de los títulos de las cards (h3) y párrafos (p) ya tienen colores que contrastan con bg-white) ... */}
                    <h2 className="text-2xl font-semibold text-gray-700 mb-4">Resumen del Mes ({months.find(m=>m.value === selectedMonth)?.label} {selectedYear})</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -341,20 +338,19 @@ const DashboardPage: React.FC = () => {
             </div>
                 </section>
 
-                {/* --- Gráfico de Líneas Diario --- */}
+                {/* d. Gráfico de Líneas Diario */}
                 {dailyData.length > 0 ? (
                   <section className="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
-                    {/* ... (gráfico como antes, los labels y ticks ya tienen colores que contrastan con bg-white) ... */}
                     <h2 className="text-2xl font-semibold text-gray-700 mb-6">Tendencia Diaria de Estrés</h2>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                  <XAxis dataKey="fecha" tick={{ fontSize: 12, fill: '#4A5568' }} />
+                  <XAxis dataKey="fecha" tick={{ fontSize: 12, fill: '#4A5568' }} /> {/*Eje X*/}
                   <YAxis yAxisId="left" 
                          label={{ value: 'Estrés (%)', angle: -90, position: 'insideLeft', fill: '#4A5568', dy:40, fontSize: 14 }} 
                          tick={{ fontSize: 12, fill: '#4A5568' }} 
-                         domain={[0, 100]}
-                  />
+                         domain={[0, 100]} 
+                  />{/*Eje y*/}
                   <YAxis yAxisId="right" 
                          orientation="right" 
                          label={{ value: 'Nº Sesiones', angle: -90, position: 'insideRight', fill: '#4A5568', dx: -10, fontSize: 14 }} 
@@ -379,7 +375,7 @@ const DashboardPage: React.FC = () => {
                 )}
               </>
             ) : (
-               !loading && !error && ( // Solo mostrar "No se encontraron datos" si no estamos cargando ni hay error
+               !loading && !error && ( // Si no se cargaron datos y no hay error mostrar lo siguiente
                 <div className="flex items-center justify-center h-3/4">
                     <div className="bg-white p-10 rounded-xl shadow-lg text-center text-gray-500">
                         <h3 className="text-xl font-semibold mb-2">Sin Datos</h3>
