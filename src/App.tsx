@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'; // Páginas de Login, grabación, das
 import RecordingPage from './pages/RecordingPage';
 import DashboardPage from './pages/DashboardPage';
 import HistorialPage from './pages/HistorialPage';
+import ProfilePage from './pages/ProfilePage';
 
 
 const App: React.FC = () => {
@@ -18,6 +19,7 @@ const App: React.FC = () => {
           <Route path="/recording" element={<RecordingPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/Historial" element={<HistorialPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           {/**/}
         </Routes>
       </AuthProvider>

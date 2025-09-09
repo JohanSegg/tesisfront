@@ -53,6 +53,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedTrabajadorId = sessionStorage.getItem('trabajadorId');
     return storedTrabajadorId ? parseInt(storedTrabajadorId, 10) : null; // Convierte a número
   });
+  const [username, setUsername] = useState<string | null>(() => {
+    const storedUserName = sessionStorage.getItem('username');
+    return storedUserName; // Convierte a número
+  });
 
   //  d. Sincroniza el estado con sessionStorage cuando hay cambios
   useEffect(() => {
@@ -78,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.ok) {
         const data = await response.json();
         setIsLoggedIn(true);
+        setUsername(username);
         setTrabajadorId(data.trabajador_id); // Guarda el ID del trabajador recibido del backend
         console.log('Inicio de sesión exitoso. Trabajador ID:', data.trabajador_id);
         return true;
@@ -85,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const errorData = await response.json();
         console.error('Error de inicio de sesión:', errorData.detail);
         setIsLoggedIn(false);
+        setUsername(null);
         setTrabajadorId(null);
         return false;
       }
@@ -126,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setIsLoggedIn(false);
     setTrabajadorId(null); // Limpia el ID del trabajador al cerrar sesión
+    setUsername(null); // Limpia el ID del trabajador al cerrar sesión
     sessionStorage.removeItem('isLoggedIn'); 
     sessionStorage.removeItem('trabajadorId'); 
   };
