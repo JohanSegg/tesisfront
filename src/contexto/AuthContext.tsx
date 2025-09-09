@@ -63,8 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.setItem('isLoggedIn', String(isLoggedIn));
     if (trabajadorId !== null) {
       sessionStorage.setItem('trabajadorId', String(trabajadorId));
+      sessionStorage.setItem('username', String(username));
     } else {
       sessionStorage.removeItem('trabajadorId');
+      sessionStorage.removeItem('username');
+
     }
   }, [isLoggedIn, trabajadorId]);
 

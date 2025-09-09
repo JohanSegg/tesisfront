@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexto/AuthContext'; // Importa contexto de autenticacion
 
 
-const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
+// const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
 
 // 1. SECCION DE LA TARJETA DESPLEGABLE
 // --- Interfaz para los datos del cuestionario ---
