@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexto/AuthContext'; // Importa contexto de autenticacion
+import { useAuth } from '../contexto/AuthContext'; // Asegúrate que la ruta sea correcta
+const API_BASE_URL = 'https://tesisback.onrender.com'; // Asegúrate de que esta URL sea correcta
+  //  const API_BASE_URL = 'http://127.0.0.1:8000';
 
-
-// const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
-
-// 1. SECCION DE LA TARJETA DESPLEGABLE
-// --- Interfaz para los datos del cuestionario ---
+// --- Definición de Tipos para los Datos de la API ---
 interface Cuestionario {
   cuestionario_id: number;
   sesion_id: number;
-  descripcion_trabajo: string | null; 
+  descripcion_trabajo: string | null; // Cambiado a string según el ejemplo
   nivel_de_sensacion_estres: number | null;
   molestias_fisicas_visual: number | null;
   molestias_fisicas_otros: number | null;
@@ -19,8 +17,8 @@ interface Cuestionario {
   updated_at: string;
 }
 
-// Interfaz actualizada para los datos que resumen una sesion (junto al cuestionario)
-interface SesionResumen {
+// Interfaz actualizada para SesionSummary
+interface SesionSummary {
   sesion_id: number;
   trabajador_id: number;
   fecha_sesion: string;
@@ -30,7 +28,7 @@ interface SesionResumen {
   duracion_calculada_segundos: number;
   porcentaje_estres: number;
   total_lecturas: number;
-  cuestionario: Cuestionario | null; // <-- Campo ya actualizado
+  cuestionario: Cuestionario | null; // <-- Campo actualizado
 }
 const LevelBar: React.FC<{ label: string; level: number | null }> = ({ label, level }) => {
   if (level === null || level < 1 || level > 5) {
@@ -43,7 +41,7 @@ const LevelBar: React.FC<{ label: string; level: number | null }> = ({ label, le
   }
 
   const percentage = (level / 5) * 100;
-  // Colores y sus umbrales en las puntuaciones (1-2: verde, 3: amarillo, 4-5: rojo)
+  // Colores basados en el nivel (1-2: verde, 3: amarillo, 4-5: rojo)
   const barColor = level <= 2 ? 'bg-green-500' : level === 3 ? 'bg-yellow-500' : 'bg-red-500';
 
   return (
@@ -62,9 +60,7 @@ const LevelBar: React.FC<{ label: string; level: number | null }> = ({ label, le
   );
 };
 
-
-// PARTE VISUAL DE LA TARJETA DESPLEGABLE
-// --- 1. Componente para mostrar los detalles del cuestionario ---
+// --- Componente para mostrar los detalles del cuestionario ---
 const CuestionarioDetails: React.FC<{ cuestionario: Cuestionario }> = ({ cuestionario }) => {
   return (
     <div className="mt-4 pt-4 border-t border-dashed border-gray-300">
@@ -85,8 +81,8 @@ const CuestionarioDetails: React.FC<{ cuestionario: Cuestionario }> = ({ cuestio
   );
 };
 
-// --- 2. Componente para una tarjeta de sesión individual ---
-const SesionCard: React.FC<{ sesion: SesionResumen }> = ({ sesion }) => {
+// --- Componente para una tarjeta de sesión individual ---
+const SesionCard: React.FC<{ sesion: SesionSummary }> = ({ sesion }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatSecondsToHHMMSS = (totalSeconds: number): string => {
@@ -100,10 +96,9 @@ const SesionCard: React.FC<{ sesion: SesionResumen }> = ({ sesion }) => {
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
 
-// PARTE VISUAL DE LA TARJETA
   return (
     <div className="bg-white rounded-lg shadow-md transition-shadow duration-300 hover:shadow-lg">
-      {/* --- a. Cabecera de la Tarjeta --- */}
+      {/* --- Cabecera de la Tarjeta --- */}
       <div className="p-4 flex items-center justify-between">
         <div className="text-gray-800">
           <p className="font-semibold text-base md:text-lg">Sesión #{sesion.sesion_id}</p>
@@ -126,10 +121,10 @@ const SesionCard: React.FC<{ sesion: SesionResumen }> = ({ sesion }) => {
         </button>
       </div>
 
-      {/* --- b. Contenido desplegable --- */}
+      {/* --- Contenido Desplegable --- */}
       <div
         className={`transition-all duration-500 ease-in-out overflow-hidden ${
-          isExpanded ? 'max-h-[40rem]' : 'max-h-0' // Se aumenta la altura máxima
+          isExpanded ? 'max-h-[40rem]' : 'max-h-0' // Aumentamos la altura máxima
         }`}
       >
         <div className="border-t border-gray-200 px-4 pb-4 pt-3">
@@ -141,7 +136,7 @@ const SesionCard: React.FC<{ sesion: SesionResumen }> = ({ sesion }) => {
             <p><strong>Total de Lecturas:</strong> {sesion.total_lecturas}</p>
           </div>
 
-          {/* --- c. Renderizado condicional del cuestionario --- */}
+          {/* --- Renderizado Condicional del Cuestionario --- */}
           {sesion.cuestionario ? (
             <CuestionarioDetails cuestionario={sesion.cuestionario} />
           ) : (
@@ -155,9 +150,7 @@ const SesionCard: React.FC<{ sesion: SesionResumen }> = ({ sesion }) => {
   );
 };
 
-
-// 2. SECCION RESTANTE DEL HISTORIAL
-// --- a. Componente principal de la pagina de Historial ---
+// --- Componente Principal de la Página de Historial ---
 const HistorialPage: React.FC = () => {
   const { trabajadorId } = useAuth();
   const navigate = useNavigate();
@@ -165,11 +158,11 @@ const HistorialPage: React.FC = () => {
   // Estados para los filtros y los datos
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [sesiones, setSesiones] = useState<SesionResumen[]>([]);
+  const [sesiones, setSesiones] = useState<SesionSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // --- b. Logica de fetching (obtencion externa) de datos ---
+  // --- Lógica de Fetching de Datos ---
   const fetchSesiones = useCallback(async (start: string, end: string) => {
     if (!trabajadorId) {
         setError("ID de trabajador no disponible. Por favor, inicie sesión.");
@@ -179,13 +172,13 @@ const HistorialPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/?start_date=${start}&end_date=${end}`;
+      const apiUrl = `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/?start_date=${start}&end_date=${end}`;
       const response = await fetch(apiUrl);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Error al obtener el historial');
       }
-      const data: SesionResumen[] = await response.json();
+      const data: SesionSummary[] = await response.json();
       setSesiones(data);
     } catch (err) {
       if (err instanceof Error) {
@@ -193,13 +186,13 @@ const HistorialPage: React.FC = () => {
       } else {
         setError('Ocurrió un error desconocido.');
       }
-      setSesiones([]); // Limpia datos en caso de error
+      setSesiones([]); // Limpiar datos en caso de error
     } finally {
       setLoading(false);
     }
   }, [trabajadorId]);
 
-  // --- c. Hook para la carga inicial del rango del mes actual ---
+  // --- Efecto para la carga inicial (rango del mes actual) ---
   useEffect(() => {
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
@@ -211,7 +204,7 @@ const HistorialPage: React.FC = () => {
     fetchSesiones(firstDayOfMonth, lastDayOfMonth);
   }, [fetchSesiones]);
 
-  // --- d. Manejador para el botón de búsqueda ---
+  // --- Manejador para el botón de búsqueda ---
   const handleSearch = () => {
     if (startDate && endDate) {
       fetchSesiones(startDate, endDate);
@@ -220,7 +213,7 @@ const HistorialPage: React.FC = () => {
     }
   };
   
-  // --- e. Agrupar sesiones por fecha mediante memoizacion (memorizacion) ---
+  // --- Memoización para agrupar sesiones por fecha ---
   const sesionesAgrupadas = useMemo(() => {
     return sesiones.reduce((acc, sesion) => {
       const fecha = sesion.fecha_sesion;
@@ -229,7 +222,7 @@ const HistorialPage: React.FC = () => {
       }
       acc[fecha].push(sesion);
       return acc;
-    }, {} as Record<string, SesionResumen[]>);
+    }, {} as Record<string, SesionSummary[]>);
   }, [sesiones]);
 
   const handleLogout = useCallback(() => {
@@ -245,15 +238,11 @@ const HistorialPage: React.FC = () => {
     });
   };
 
-
-  
-// PARTE VISUAL DEL RESTO DEL HISTORIAL
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100">
-      {/* Barra lateral */}
+      {/* --- Sidebar (Reutilizado del Dashboard) --- */}
       <aside className="w-64 bg-gray-800 p-6 flex flex-col justify-between shadow-lg">
         <div>
-          {/* Logo */}
          <div className="mb-10 text-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -265,21 +254,20 @@ const HistorialPage: React.FC = () => {
             </svg>
             <h2 className="text-xl font-semibold text-gray-50 mt-2">Stress Detection App</h2>
           </div>
-        {/*Menu de navegacion */}
           <nav className="space-y-4">
             <button
-              onClick={() => navigate('/recording')} // 1. Pagina de grabación 
+              onClick={() => navigate('/recording')} // Asumiendo que esta es tu página de grabación
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {/* Icono de grabacion */}
+                {/* Icono de Círculo (Record) */}
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Grabar
             </button>
             <button
-              onClick={() => navigate('/dashboard')}  // 2. Dashboard
+              onClick={() => navigate('/dashboard')}
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -289,18 +277,18 @@ const HistorialPage: React.FC = () => {
               Estadísticas
             </button>
            <button
-            onClick={() => navigate('/historial')} // 3. Historial
+            onClick={() => navigate('/historial')}
             className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
           >
             <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {/* Icono de historial */}
+              {/* Icono de Documento con texto (History Log) */}
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Historial
           </button>
 
             <button
-              onClick={() => navigate('/settings')} // 4. Configuracion
+              onClick={() => navigate('/settings')}
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -310,7 +298,7 @@ const HistorialPage: React.FC = () => {
               Configuración
             </button>
             <button
-              onClick={() => navigate('/profile')} // 5. Perfil
+              onClick={() => navigate('/profile')}
               className="w-full flex items-center p-3 text-lg font-medium text-gray-200 hover:bg-gray-700 rounded-lg transition duration-200"
             >
               <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -318,25 +306,23 @@ const HistorialPage: React.FC = () => {
               </svg>
               Perfil
             </button>
-          </nav>       
-        </div>
-
-        {/* Boton Logout */}
+          </nav>        </div>
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center p-3 mt-8 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-200"
         >
+          {/* SVG Logout */}
           Cerrar Sesión
         </button>
       </aside>
 
-      {/* --- CONTENIDO PRINCIPAL DEL HISTORIAL--- */}
+      {/* --- Contenido Principal del Historial --- */}
       <main className="flex-1 p-4 md:p-8 overflow-auto bg-gray-100">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Historial de Sesiones</h1>
         </header>
 
-        {/* --- a. Filtros de Fecha --- */}
+        {/* --- Filtros de Fecha --- */}
         <div className="mb-6 p-4 bg-white shadow rounded-lg flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1 w-full sm:w-auto">
             <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio:</label>
@@ -367,7 +353,7 @@ const HistorialPage: React.FC = () => {
           </button>
         </div>
 
-        {/* --- b. Mensajes de estado y lista de sesiones --- */}
+        {/* --- Mensajes de Estado y Lista de Sesiones --- */}
         {loading && <p className="text-center text-xl text-gray-600 p-10">Cargando historial...</p>}
         {!loading && error && <p className="text-center text-red-600 bg-red-100 p-4 rounded-md shadow">Error: {error}</p>}
         {!loading && !error && sesiones.length === 0 && (
