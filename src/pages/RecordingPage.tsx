@@ -157,7 +157,6 @@ const RecordingPage: React.FC = () => {
   const BACKEND_CUESTIONARIO_URL = `${API_BASE_URL}/cuestionarios/`;
   const BACKEND_PREDICT_URL = `${API_BASE_URL}/predict/`;
   const BACKEND_START_SESSION_URL = `${API_BASE_URL}/sessions/start/`;
-  const BACKEND_PAUSE_SESSION_URL = `${API_BASE_URL}/sessions/`; 
   const ANALYSIS_INTERVAL = 1000;
   const DETECTION_INTERVAL = 100;
   const MODEL_URL = '/models';

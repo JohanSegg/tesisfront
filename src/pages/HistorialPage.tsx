@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexto/AuthContext'; // Importa contexto de autenticacion
 
 
-// const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 1. SECCION DE LA TARJETA DESPLEGABLE
 // --- Interfaz para los datos del cuestionario ---
@@ -190,7 +190,7 @@ const HistorialPage: React.FC = () => {
   // Estados para los filtros y los datos
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [sesiones, setSesiones] = useState<SesionSummary[]>([]);
+  const [sesiones, setSesiones] = useState<SesionResumen[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -235,14 +235,14 @@ const HistorialPage: React.FC = () => {
     }
     setLoading(true);
     setError(null);
-    try {
+    try { 
       const apiUrl = `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/?start_date=${start}&end_date=${end}`;
       const response = await fetch(apiUrl);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Error al obtener el historial');
       }
-      const data: SesionSummary[] = await response.json();
+      const data: SesionResumen[] = await response.json();
       setSesiones(data);
     } catch (err) {
       if (err instanceof Error) {
@@ -286,7 +286,7 @@ const HistorialPage: React.FC = () => {
       }
       acc[fecha].push(sesion);
       return acc;
-    }, {} as Record<string, SesionSummary[]>);
+    }, {} as Record<string, SesionResumen[]>);
   }, [sesiones]);
 
   const handleLogout = useCallback(() => {
