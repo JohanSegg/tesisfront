@@ -18,7 +18,9 @@ type ProfileFormData = {
 };
 
 const ProfilePage: React.FC = () => {
-  const API_BASE_URL = 'https://tesisback.onrender.com';
+  // const API_BASE_URL = 'https://tesisback.onrender.com';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 //   const API_BASE_URL = 'http://127.0.0.1:8000';
   const navigate = useNavigate();
   const { logout } = useAuth(); // Solo necesitamos logout del contexto ahora

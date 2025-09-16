@@ -49,7 +49,9 @@ const formatSecondsToHHMMSS = (totalSeconds: number | null | undefined): string 
 
 
 // --- Constantes ---
-const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i); // Últimos 5 años
 const months = [

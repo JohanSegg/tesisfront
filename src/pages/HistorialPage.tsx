@@ -86,67 +86,93 @@ const CuestionarioDetails: React.FC<{ cuestionario: Cuestionario }> = ({ cuestio
 };
 
 // --- 2. Componente para una tarjeta de sesión individual ---
-const SesionCard: React.FC<{ sesion: SesionResumen }> = ({ sesion }) => {
+const SesionCard: React.FC<{
+  sesion: SesionResumen;
+  onDelete?: (id: number) => void;
+}> = ({ sesion, onDelete }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatSecondsToHHMMSS = (totalSeconds: number): string => {
-    if (totalSeconds < 0) return '00:00:00';
+    if (totalSeconds < 0) return "00:00:00";
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = Math.floor(totalSeconds % 60);
-    const pad = (num: number) => String(num).padStart(2, '0');
+    const pad = (num: number) => String(num).padStart(2, "0");
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   };
 
   const toggleExpand = () => setIsExpanded(!isExpanded);
 
-// PARTE VISUAL DE LA TARJETA
   return (
     <div className="bg-white rounded-lg shadow-md transition-shadow duration-300 hover:shadow-lg">
-      {/* --- a. Cabecera de la Tarjeta --- */}
-      <div className="p-4 flex items-center justify-between">
+      {/* --- a. Cabecera --- */}
+      <div className="p-4 flex items-center justify-between gap-2">
         <div className="text-gray-800">
-          <p className="font-semibold text-base md:text-lg">Sesión #{sesion.sesion_id}</p>
+          <p className="font-semibold text-base md:text-lg">
+            Sesión #{sesion.sesion_id}
+          </p>
           <p className="text-sm text-gray-600">
             Duración: {formatSecondsToHHMMSS(sesion.duracion_calculada_segundos)}
           </p>
         </div>
-        <button
-          onClick={toggleExpand}
-          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center gap-2"
-        >
-          {isExpanded ? 'Ver menos' : 'Ver más'}
-          <svg
-            className={`h-5 w-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
-            viewBox="0 0 20 20"
-            fill="currentColor"
+        <div className="flex gap-2">
+          <button
+            onClick={toggleExpand}
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
           >
-            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
+            {isExpanded ? "Ver menos" : "Ver más"}
+          </button>
+          <button
+            onClick={() => onDelete && onDelete(sesion.sesion_id)}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700"
+          >
+            Eliminar
+          </button>
+        </div>
       </div>
 
       {/* --- b. Contenido desplegable --- */}
       <div
         className={`transition-all duration-500 ease-in-out overflow-hidden ${
-          isExpanded ? 'max-h-[40rem]' : 'max-h-0' // Se aumenta la altura máxima
+          isExpanded ? "max-h-[40rem]" : "max-h-0"
         }`}
       >
         <div className="border-t border-gray-200 px-4 pb-4 pt-3">
           <h4 className="font-semibold text-gray-700 mb-2">Detalles de la Sesión</h4>
           <div className="space-y-1 text-sm text-gray-600">
-            <p><strong>Estado:</strong> <span className={`font-medium ${sesion.estado_grabacion === 'Finalizada' ? 'text-green-600' : 'text-yellow-600'}`}>{sesion.estado_grabacion}</span></p>
-            <p><strong>Hora de Inicio:</strong> {new Date(sesion.hora_inicio).toLocaleTimeString('es-ES')}</p>
-            <p><strong>Porcentaje de Estrés:</strong> {sesion.porcentaje_estres.toFixed(2)}%</p>
-            <p><strong>Total de Lecturas:</strong> {sesion.total_lecturas}</p>
+            <p>
+              <strong>Estado:</strong>{" "}
+              <span
+                className={`font-medium ${
+                  sesion.estado_grabacion === "Finalizada"
+                    ? "text-green-600"
+                    : "text-yellow-600"
+                }`}
+              >
+                {sesion.estado_grabacion}
+              </span>
+            </p>
+            <p>
+              <strong>Hora de Inicio:</strong>{" "}
+              {new Date(sesion.hora_inicio).toLocaleTimeString("es-ES")}
+            </p>
+            <p>
+              <strong>Porcentaje de Estrés:</strong>{" "}
+              {sesion.porcentaje_estres.toFixed(2)}%
+            </p>
+            <p>
+              <strong>Total de Lecturas:</strong> {sesion.total_lecturas}
+            </p>
           </div>
 
-          {/* --- c. Renderizado condicional del cuestionario --- */}
+          {/* Cuestionario */}
           {sesion.cuestionario ? (
             <CuestionarioDetails cuestionario={sesion.cuestionario} />
           ) : (
             <div className="mt-4 pt-4 border-t border-dashed border-gray-300">
-              <p className="text-center text-gray-500 italic">No hay un cuestionario registrado para esta sesión.</p>
+              <p className="text-center text-gray-500 italic">
+                No hay un cuestionario registrado para esta sesión.
+              </p>
             </div>
           )}
         </div>
@@ -154,6 +180,7 @@ const SesionCard: React.FC<{ sesion: SesionResumen }> = ({ sesion }) => {
     </div>
   );
 };
+
 
 
 // 2. SECCION RESTANTE DEL HISTORIAL
@@ -168,6 +195,38 @@ const HistorialPage: React.FC = () => {
   const [sesiones, setSesiones] = useState<SesionResumen[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [sesionToDelete, setSesionToDelete] = useState<number | null>(null);
+
+
+  const handleDeleteRequest = (id: number) => {
+    setSesionToDelete(id);
+    setShowConfirmModal(true);
+  };
+
+   const confirmDelete = async () => {
+    if (!sesionToDelete) return;
+
+    try {
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/sessions/${sesionToDelete}/delete`;
+      const response = await fetch(apiUrl, { method: "DELETE" });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || "Error al eliminar sesión");
+      }
+
+      // Filtrar del estado
+      setSesiones((prev) => prev.filter((s) => s.sesion_id !== sesionToDelete));
+
+      setShowConfirmModal(false);
+      setShowSuccessModal(true);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error desconocido");
+    }
+  };
 
   // --- b. Logica de fetching (obtencion externa) de datos ---
   const fetchSesiones = useCallback(async (start: string, end: string) => {
@@ -386,13 +445,62 @@ const HistorialPage: React.FC = () => {
                 </h2>
                 <div className="space-y-3">
                   {sesionesDelDia.map(sesion => (
-                    <SesionCard key={sesion.sesion_id} sesion={sesion} />
+                    <SesionCard
+                      key={sesion.sesion_id}
+                      sesion={sesion}
+                      onDelete={handleDeleteRequest}
+                    />
                   ))}
                 </div>
               </section>
             ))}
           </div>
         )}
+         {/* Modal Confirmación */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Confirmar eliminación
+            </h2>
+            <p className="text-gray-600 mb-6">
+              ¿Seguro que deseas eliminar esta sesión?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Éxito */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96 text-center">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Sesión eliminada con éxito
+            </h2>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+    
       </main>
     </div>
   );

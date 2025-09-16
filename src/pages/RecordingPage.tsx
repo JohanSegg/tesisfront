@@ -130,6 +130,13 @@ const RecordingPage: React.FC = () => {
   const [isCuestionarioModalOpen, setIsCuestionarioModalOpen] = useState(false);
   const [sessionToFinalizeId, setSessionToFinalizeId] = useState<number | null>(null);
 
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  const currentSessionIdRef = useRef<number | null>(null);
+
+
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Cargando modelos de detección facial...');
@@ -139,10 +146,14 @@ const RecordingPage: React.FC = () => {
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const [isRecordingPaused, setIsRecordingPaused] = useState<boolean>(false); // Estado para pausa de grabación
+  const isRecordingPausedRef = useRef(false);
 
+  useEffect(() => {
+    isRecordingPausedRef.current = isRecordingPaused;
+  }, [isRecordingPaused]);
 
   // Configuration de constantes
-  const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const BACKEND_CUESTIONARIO_URL = `${API_BASE_URL}/cuestionarios/`;
   const BACKEND_PREDICT_URL = `${API_BASE_URL}/predict/`;
   const BACKEND_START_SESSION_URL = `${API_BASE_URL}/sessions/start/`;
@@ -156,10 +167,18 @@ const RecordingPage: React.FC = () => {
   const analysisIntervalIdRef = useRef<NodeJS.Timeout | null>(null);
   const latestDetectionRef = useRef<faceapi.FaceDetection | null>(null);
 
+
+
+
+
   const detectionOptions = new faceapi.TinyFaceDetectorOptions({
     inputSize: 224,
     scoreThreshold: 0.5,
   });
+
+  useEffect(() => {
+    currentSessionIdRef.current = currentSessionId;
+  }, [currentSessionId]);
 
   // --- 1. Funcion que carga los modelos de Face-Api.js ---
   const loadModels = useCallback(async () => {
@@ -315,10 +334,11 @@ const RecordingPage: React.FC = () => {
   //  --- 6. Funcion que sirve como bucle para analizar el rostro detectado. ---
   //  --- Maneja varios errores ---
   const analyzeDetectedFace = useCallback(async (sessionId: number) => {
-    if (!latestDetectionRef.current || isAnalyzing || !modelsLoaded || isRecordingPaused) {
-      console.log('Saltando análisis: ', { sessionId, latestDetection: latestDetectionRef.current, isAnalyzing, modelsLoaded, isRecordingPaused });
+    if (!latestDetectionRef.current || isAnalyzing || !modelsLoaded || isRecordingPausedRef.current) {
+      console.log('Saltando análisis: ', { sessionId, paused: isRecordingPausedRef.current });
       return;
     }
+
 
     setIsAnalyzing(true);
     console.log('Iniciando ciclo de análisis...');
@@ -450,7 +470,12 @@ const RecordingPage: React.FC = () => {
 
     } catch (err: any) {
       console.error('Error al iniciar la cámara:', err);
-      setStatusMessage(`Error al iniciar cámara: ${err.message}. Asegúrate de permitir el acceso.`);
+      let errorTraducido = ''
+      if(err.message == 'Permission denied')
+        {errorTraducido = 'Permisos denegados'}
+      else
+        {errorTraducido = 'No se encontró un dispositivo'}
+      setStatusMessage(`Error al iniciar cámara: ${errorTraducido}. Asegúrate de permitir el acceso.`);
       setIsCameraActive(false);
     }
   }, [modelsLoaded, isCameraActive, stopAllMediaAndIntervals, currentSessionId, API_BASE_URL]);
@@ -509,57 +534,50 @@ const RecordingPage: React.FC = () => {
     }
   }, [isCameraActive, modelsLoaded, trabajadorId, navigate, runDetection, analyzeDetectedFace, BACKEND_START_SESSION_URL]);
 
-
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      setCountdown(null);
+      startRecording(); // llama a la función original
+      return;
+    }
+    const timer = setTimeout(() => setCountdown(prev => (prev !== null ? prev - 1 : null)), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown, startRecording]);
+  
   // --- 9. Funcion que cambia estados de pausa y resumen de la grabaciom---
-  const togglePauseRecording = useCallback(async () => {
+  const togglePauseRecording = useCallback(() => {
     if (currentSessionId === null) {
       setStatusMessage('No hay una sesión de grabación activa para pausar/reanudar.');
       return;
     }
 
-    const newState = !isRecordingPaused; // Nuevo estado: 'true' para pausar, 'false' para reanudar
-    const newStatus = newState ? "Pausada" : "En Curso";
+    const newState = !isRecordingPaused;
+    setIsRecordingPaused(newState);
 
-    try {
-      setStatusMessage(newState ? 'Pausando grabación...' : 'Reanudando grabación...');
-      const response = await fetch(`${BACKEND_PAUSE_SESSION_URL}${currentSessionId}/update_status/`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado_grabacion: newStatus }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Error desconocido' }));
-        throw new Error(`Error al actualizar estado de sesión: ${response.status} - ${errorData.detail || response.statusText}`);
+    if (newState) {
+      // 🔴 Pausar
+      if (analysisIntervalIdRef.current) {
+        clearInterval(analysisIntervalIdRef.current);
+        analysisIntervalIdRef.current = null;
+        setIsAnalyzing(false);
       }
-
-      setIsRecordingPaused(newState);
-      if (newState) {
-        // Pausar: detiene el analisis pero mantiene detección
-        if (analysisIntervalIdRef.current) {
-          clearInterval(analysisIntervalIdRef.current);
-          analysisIntervalIdRef.current = null;
-          setIsAnalyzing(false);
-        }
-        setStatusMessage('Grabación pausada.');
-      } else {
-        // Reanudar: reinicia el análisis
-        if (detectionIntervalIdRef.current === null) { 
-             detectionIntervalIdRef.current = setInterval(runDetection, DETECTION_INTERVAL); 
-        }
-        if (analysisIntervalIdRef.current === null) {
-          analysisIntervalIdRef.current = setInterval(() => analyzeDetectedFace(currentSessionId), ANALYSIS_INTERVAL); 
-        }
-        setStatusMessage('Grabación reanudada. Analizando rostro...');
+      setStatusMessage('Grabación pausada.');
+    } else {
+      // 🟢 Reanudar
+      if (detectionIntervalIdRef.current === null) {
+        detectionIntervalIdRef.current = setInterval(runDetection, DETECTION_INTERVAL);
       }
-      console.log(`Sesión ${currentSessionId} estado actualizado a: ${newStatus}`);
-
-    } catch (error: any) {
-      console.error('Error al pausar/reanudar la grabación:', error);
-      setStatusMessage(`Error al ${newState ? 'pausar' : 'reanudar'}: ${error.message}`);
+      if (analysisIntervalIdRef.current === null) {
+        analysisIntervalIdRef.current = setInterval(() => {
+          if (currentSessionIdRef.current !== null) {
+            analyzeDetectedFace(currentSessionIdRef.current);
+          }
+        }, ANALYSIS_INTERVAL);
+      }
+      setStatusMessage('Grabación reanudada. Analizando rostro...');
     }
-  }, [currentSessionId, isRecordingPaused, BACKEND_PAUSE_SESSION_URL, runDetection, analyzeDetectedFace]);
-
+  }, [currentSessionId, isRecordingPaused, runDetection, analyzeDetectedFace]);
 
   // --- Hook para manejar logeo ---
   useEffect(() => {
@@ -733,9 +751,9 @@ const RecordingPage: React.FC = () => {
             </button>
 
             {/* b3. Boton para iniciar grabacion (Análisis) */}
-            <button
-              onClick={startRecording}
-              disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded} // Deshabilita boton si no hay camara grabando o modelos no cargados
+           <button
+              onClick={() => setShowConfirmModal(true)}
+              disabled={!isCameraActive || currentSessionId !== null || !modelsLoaded}
               className={`px-6 py-3 rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-200
                 ${isCameraActive && currentSessionId === null && modelsLoaded ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-gray-600 cursor-not-allowed'}
               `}
@@ -772,6 +790,42 @@ const RecordingPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-white mb-4">Resultados del Análisis</h2>
           <div id="resultArea" className="bg-gray-700 p-4 rounded text-gray-200 text-sm font-mono whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: resultAreaContent || "Esperando resultados..." }}></div>
         </div>
+        {/* Modal de confirmación */}
+        {showConfirmModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 shadow-xl max-w-sm w-full text-center">
+              <h2 className="text-xl font-bold text-white mb-4">Confirmar inicio</h2>
+              <p className="text-gray-300 mb-6">¿Deseas iniciar la grabación?</p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-md"
+                >
+                  No
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setCountdown(3); // inicia conteo
+                  }}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                >
+                  Sí
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Overlay de conteo regresivo */}
+        {countdown !== null && (
+          <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+            <h1 className="text-6xl font-extrabold text-white animate-bounce">
+              {countdown}
+            </h1>
+          </div>
+        )}
+
       </main>
 
       <CuestionarioModal

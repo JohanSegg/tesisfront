@@ -7,13 +7,27 @@ import { useAuth, type RegisterFormData } from '../contexto/AuthContext'; // Imp
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [usernameError, setUsernameError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showRegisterForm, setShowRegisterForm] = useState<boolean>(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const [registerErrors, setRegisterErrors] = useState<{
+    nombre?: string;
+    correo?: string;
+    username?: string;
+    password?: string;
+    fecha_de_nacimiento?: string;
+  }>({});
+
 
 // Estados iniciales para el formulario de registro
   const [registerFormData, setRegisterFormData] = useState<RegisterFormData>({
     nombre: '',
+    correo: '',
     username: '',
     password: '',
     fecha_de_nacimiento: '',
@@ -35,6 +49,23 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
     setSuccessMessage('');
+    setUsernameError('');
+    setPasswordError('');
+
+    let valid = true;
+
+    if (!username.trim()) {
+      setUsernameError('El usuario es obligatorio.');
+      valid = false;
+    }
+
+    if (!password.trim()) {
+      setPasswordError('La contraseña es obligatoria.');
+      valid = false;
+    }
+
+    if (!valid) return; // ❌ No sigue si faltan campos
+
     const success = await login(username, password);
     if (success) {
       setSuccessMessage('Inicio de sesión exitoso. Redirigiendo...');
@@ -43,6 +74,7 @@ const LoginPage: React.FC = () => {
       setError('Credenciales inválidas. Verifica tu usuario y contraseña.');
     }
   };
+
 
 // Manejador para el cambio de inputs en el formulario de Registro
   const handleRegisterInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -54,33 +86,94 @@ const LoginPage: React.FC = () => {
   };
 
 // Manejador para el envío del formulario de Registro
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRegisterError('');
-    setRegisterSuccess('');
+const handleRegisterSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setRegisterSuccess('');
+  setRegisterErrors({}); // limpia errores previos
 
-    const dataToSend = {
-      ...registerFormData,
-      horas_trabajo_semanal: registerFormData.horas_trabajo_semanal === '' ? undefined : Number(registerFormData.horas_trabajo_semanal),
-      horas_descanso_dia: registerFormData.horas_descanso_dia === '' ? undefined : Number(registerFormData.horas_descanso_dia),
-      fecha_de_nacimiento: registerFormData.fecha_de_nacimiento === '' ? undefined : registerFormData.fecha_de_nacimiento,
-    };
+  const errors: typeof registerErrors = {};
 
-    const success = await register(dataToSend as any);
-    if (success) {
-      setRegisterSuccess('¡Registro exitoso! Ahora puedes iniciar sesión.');
-      setRegisterFormData({
-        nombre: '', username: '', password: '', fecha_de_nacimiento: '',
-        genero: '', estado_civil: '', uso_de_anteojos: false, estudio_y_trabajo: '',
-        horas_trabajo_semanal: undefined, horas_descanso_dia: undefined,
-      });
-      setShowRegisterForm(false);
-      setUsername(dataToSend.username);
-      setPassword('');
-    } else {
-      setRegisterError('Error en el registro. El nombre de usuario podría ya existir o los datos son inválidos.');
+  // 1. Campos requeridos
+  if (!registerFormData.nombre.trim()) {
+    errors.nombre = 'El nombre es obligatorio.';
+  }
+  if (!registerFormData.correo.trim()) {
+    errors.correo = 'El correo electrónico es obligatorio.';
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(registerFormData.correo)) {
+      errors.correo = 'El correo debe ser válido (ejemplo: usuario@correo.com).';
     }
+  }
+  if (!registerFormData.username.trim()) {
+    errors.username = 'El usuario es obligatorio.';
+  } else if (registerFormData.username.length < 4) {
+    errors.username = 'El usuario debe tener al menos 4 caracteres.';
+  }
+  if (!registerFormData.password.trim()) {
+    errors.password = 'La contraseña es obligatoria.';
+  } else {
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(registerFormData.password)) {
+      errors.password =
+        'Debe tener al menos 8 caracteres, incluir una mayúscula y un número.';
+    }
+  }
+  if (!registerFormData.fecha_de_nacimiento) {
+    errors.fecha_de_nacimiento = 'La fecha de nacimiento es obligatoria.';
+  } else {
+    const hoy = new Date();
+    const fechaNacimiento = new Date(registerFormData.fecha_de_nacimiento);
+    const edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+    const cumpleEsteAño =
+      hoy.getMonth() > fechaNacimiento.getMonth() ||
+      (hoy.getMonth() === fechaNacimiento.getMonth() &&
+        hoy.getDate() >= fechaNacimiento.getDate());
+    const edadReal = cumpleEsteAño ? edad : edad - 1;
+
+    if (edadReal < 18) {
+      errors.fecha_de_nacimiento = 'Debes tener al menos 18 años para registrarte.';
+    }
+  }
+
+  // 👉 Si hay errores, los guardamos y detenemos
+  if (Object.keys(errors).length > 0) {
+    setRegisterErrors(errors);
+    return;
+  }
+
+  // ✅ Si pasa todas las validaciones
+  const dataToSend = {
+    ...registerFormData,
+    horas_trabajo_semanal:
+      registerFormData.horas_trabajo_semanal === '' ? undefined : Number(registerFormData.horas_trabajo_semanal),
+    horas_descanso_dia:
+      registerFormData.horas_descanso_dia === '' ? undefined : Number(registerFormData.horas_descanso_dia),
+    fecha_de_nacimiento:
+      registerFormData.fecha_de_nacimiento === '' ? undefined : registerFormData.fecha_de_nacimiento,
   };
+
+  const success = await register(dataToSend as any);
+  if (success) {
+    setRegisterFormData({
+      nombre: '',
+      correo: '',
+      username: '',
+      password: '',
+      fecha_de_nacimiento: '',
+      genero: '',
+      estado_civil: '',
+      uso_de_anteojos: false,
+      estudio_y_trabajo: '',
+      horas_trabajo_semanal: undefined,
+      horas_descanso_dia: undefined,
+    });
+    setShowSuccessModal(true);
+  } else {
+    setRegisterErrors({ username: 'El usuario o correo ya existe, prueba otro.', correo: 'El usuario o correo ya existe, prueba otro.' });
+  }
+};
+
 
 // PARTE VISUAL
   return (
@@ -121,11 +214,12 @@ const LoginPage: React.FC = () => {
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    required
                     placeholder="Usuario"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 rounded-lg bg-gray-700 border ${usernameError ? 'border-red-500' : 'border-gray-600'} text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   />
+                  {usernameError && <p className="text-red-400 text-xs mt-1">{usernameError}</p>}
                 </div>
+
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-400 sr-only">Contraseña</label>
                   <input
@@ -133,11 +227,12 @@ const LoginPage: React.FC = () => {
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
                     placeholder="Contraseña"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 rounded-lg bg-gray-700 border ${passwordError ? 'border-red-500' : 'border-gray-600'} text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   />
+                  {passwordError && <p className="text-red-400 text-xs mt-1">{passwordError}</p>}
                 </div>
+
 
                 {error && <p className="text-red-400 text-sm mt-2 text-center">{error}</p>}
                 {successMessage && <p className="text-green-400 text-sm mt-2 text-center">{successMessage}</p>}
@@ -193,9 +288,34 @@ const LoginPage: React.FC = () => {
                     name="nombre"
                     value={registerFormData.nombre}
                     onChange={handleRegisterInputChange}
-                    required
+                    
                     className="mt-1 block w-full px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {registerErrors.nombre && (
+    <p className="text-red-400 text-sm mt-1">{registerErrors.nombre}</p>
+  )}
+                </div>
+                <div>
+                  <div>
+                    <label
+                      htmlFor="register-correo"
+                      className="block text-sm font-medium text-gray-400"
+                    >
+                      Correo electrónico:
+                    </label>
+                    <input
+                      id="register-correo"
+                      name="correo"
+                      value={registerFormData.correo}
+                      onChange={handleRegisterInputChange}
+                      
+                      className="mt-1 block w-full px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="tucorreo@ejemplo.com"
+                    />
+                    {registerErrors.correo && (
+    <p className="text-red-400 text-sm mt-1">{registerErrors.correo}</p>
+  )}
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="register-username" className="block text-sm font-medium text-gray-400">Usuario:</label>
@@ -205,9 +325,12 @@ const LoginPage: React.FC = () => {
                     name="username"
                     value={registerFormData.username}
                     onChange={handleRegisterInputChange}
-                    required
+                    
                     className="mt-1 block w-full px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {registerErrors.username && (
+    <p className="text-red-400 text-sm mt-1">{registerErrors.username}</p>
+  )}
                 </div>
                 <div>
                   <label htmlFor="register-password" className="block text-sm font-medium text-gray-400">Contraseña:</label>
@@ -217,9 +340,12 @@ const LoginPage: React.FC = () => {
                     name="password"
                     value={registerFormData.password}
                     onChange={handleRegisterInputChange}
-                    required
+                    
                     className="mt-1 block w-full px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {registerErrors.password && (
+    <p className="text-red-400 text-sm mt-1">{registerErrors.password}</p>
+  )}
                 </div>
 
                 {/* Campos opcionales */}
@@ -233,6 +359,9 @@ const LoginPage: React.FC = () => {
                     onChange={handleRegisterInputChange}
                     className="mt-1 block w-full px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {registerErrors.fecha_de_nacimiento && (
+    <p className="text-red-400 text-sm mt-1">{registerErrors.fecha_de_nacimiento}</p>
+  )}
                 </div>
                 <div>
                   <label htmlFor="register-genero" className="block text-sm font-medium text-gray-400">Género:</label>
@@ -298,14 +427,7 @@ const LoginPage: React.FC = () => {
                     <option value="Femenino">No estudio ni trabajo</option>
                     <option value="Otro">Ambos</option>
                   </select>
-                  {/* <input
-                    type="text"
-                    id="register-estudio_y_trabajo"
-                    name="estudio_y_trabajo"
-                    value={registerFormData.estudio_y_trabajo || ''}
-                    onChange={handleRegisterInputChange}
-                    className="mt-1 block w-full px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  /> */}
+              
                 </div>
                 <div>
                   <label htmlFor="register-horas_trabajo_semanal" className="block text-sm font-medium text-gray-400">Horas Trabajo Semanal:</label>
@@ -377,7 +499,30 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 shadow-xl max-w-sm w-full text-center">
+            <h2 className="text-xl font-bold text-green-400 mb-4">
+              ✅ Registro realizado con éxito
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Ahora puedes iniciar sesión con tu usuario y contraseña.
+            </p>
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                setShowRegisterForm(false); // ✅ Regresa al login
+              }}
+              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md transition-colors"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
+    
   );
 };
 

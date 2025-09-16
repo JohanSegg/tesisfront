@@ -2,11 +2,12 @@ import React, { useState, createContext, useContext, useEffect } from 'react';
 
 // Define la URL base del backend
 
-const API_BASE_URL = 'https://tesisback.onrender.com'; //Para implementacion local: const API_BASE_URL = 'http://127.0.0.1:8000' 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Define el tipo de datos del registro 
 export interface RegisterFormData {
   nombre: string;
+  correo: string;
   username: string;
   password: string;
   fecha_de_nacimiento?: string;
