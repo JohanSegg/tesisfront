@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexto/AuthContext'; // Asegúrate que la ruta sea correcta
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  //  const API_BASE_URL = 'http://127.0.0.1:8000';
+import { useAuth } from '../contexto/AuthContext'; // Importa contexto de autenticacion
 
-// --- Definición de Tipos para los Datos de la API ---
+
+// const API_BASE_URL = 'https://tesisback.onrender.com'; //'http://127.0.0.1:8000' si es que es local
+
+// 1. SECCION DE LA TARJETA DESPLEGABLE
+// --- Interfaz para los datos del cuestionario ---
 interface Cuestionario {
   cuestionario_id: number;
   sesion_id: number;
@@ -17,9 +19,8 @@ interface Cuestionario {
   updated_at: string;
 }
 
-
-// Interfaz actualizada para SesionSummary
-interface SesionSummary {
+// Interfaz actualizada para los datos que resumen una sesion (junto al cuestionario)
+interface SesionResumen {
   sesion_id: number;
   trabajador_id: number;
   fecha_sesion: string;
@@ -84,7 +85,7 @@ const CuestionarioDetails: React.FC<{ cuestionario: Cuestionario }> = ({ cuestio
 
 // --- 2. Componente para una tarjeta de sesión individual ---
 const SesionCard: React.FC<{
-  sesion: SesionSummary;
+  sesion: SesionResumen;
   onDelete?: (id: number) => void;
 }> = ({ sesion, onDelete }) => {
   const [isExpanded, setIsExpanded] = useState(false);
