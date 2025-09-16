@@ -88,7 +88,7 @@ const LoginPage: React.FC = () => {
 const handleRegisterSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setRegisterSuccess('');
-  sets({}); // limpia errores previos
+  setRegisterErrors({}); // limpia errores previos
 
   const errors: typeof registerErrors = {};
 
