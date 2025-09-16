@@ -38,7 +38,6 @@ const LoginPage: React.FC = () => {
     horas_trabajo_semanal: '',
     horas_descanso_dia: '',
   });
-  const [registerError, setRegisterError] = useState<string>('');
   const [registerSuccess, setRegisterSuccess] = useState<string>('');
 
   const { login, register } = useAuth();
@@ -89,7 +88,7 @@ const LoginPage: React.FC = () => {
 const handleRegisterSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setRegisterSuccess('');
-  setRegisterErrors({}); // limpia errores previos
+  sets({}); // limpia errores previos
 
   const errors: typeof registerErrors = {};
 
@@ -452,7 +451,6 @@ const handleRegisterSubmit = async (e: React.FormEvent) => {
                   />
                 </div>
 
-                {registerError && <p className="text-red-400 text-sm mt-2 text-center">{registerError}</p>}
                 {registerSuccess && <p className="text-green-400 text-sm mt-2 text-center">{registerSuccess}</p>}
 
                 <button
