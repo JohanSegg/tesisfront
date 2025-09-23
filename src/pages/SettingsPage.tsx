@@ -6,7 +6,7 @@ import { useAuth } from '../contexto/AuthContext';
 
 const SettingsPage: React.FC = () => {
   const { defaultDurationKey, setDefaultDurationKey, showResults, setShowResults, durationLabel } = useSettings();
-  const {trabajadorId, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const durations: DurationKey[] = ['20m', '1h', '2h', '4h'];
