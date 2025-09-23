@@ -91,7 +91,7 @@ const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, 
 const RecordingPage: React.FC = () => {
   const { isLoggedIn, trabajadorId, logout } = useAuth();
   const navigate = useNavigate();
-  const { defaultDurationKey, showResults, durationLabel } = useSettings(); // NEW
+  const { defaultDurationKey, showResults } = useSettings(); // NEW
 
   // UI y modales
   const [isCuestionarioModalOpen, setIsCuestionarioModalOpen] = useState(false);
@@ -207,6 +207,7 @@ const RecordingPage: React.FC = () => {
     if (sid != null) {
       // Opcional: si tienes endpoint para marcar finalización con razón, puedes habilitar esto
       try {
+        console.log(reason);
         // Ejemplo: PUT /sessions/{id}/finish/  (ajusta si tu API usa otra ruta)
         // await fetch(`${API_BASE_URL}/sessions/${sid}/finish/`, {
         //   method: 'PUT',
