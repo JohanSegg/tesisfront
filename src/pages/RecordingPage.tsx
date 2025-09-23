@@ -120,8 +120,8 @@ const RecordingPage: React.FC = () => {
   }, [isRecordingPaused]);
 
   // Inactividad / duración
-  // const TEN_MIN_MS = 10 * 60 * 1000;
-  const TEN_MIN_MS = 10 * 1000;
+  const TEN_MIN_MS = 10 * 60 * 1000;
+  // const TEN_MIN_MS = 10 * 1000;
   const lastPredictAtRef = useRef<number | null>(null); // NEW: marca el último /predict exitoso
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null); // NEW: límite de sesión por duración
   const inactivityCheckIntervalRef = useRef<NodeJS.Timeout | null>(null); // NEW: chequeo periódico de reglas CP018/CP019
