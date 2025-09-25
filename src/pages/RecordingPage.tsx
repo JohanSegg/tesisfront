@@ -92,6 +92,9 @@ const RecordingPage: React.FC = () => {
   const { isLoggedIn, trabajadorId, logout } = useAuth();
   const navigate = useNavigate();
   const { defaultDurationKey, showResults } = useSettings(); // NEW
+  
+  const MARGIN = 0.15;     // 15% de margen alrededor del rostro
+  const MIN_SIDE = 120;    // descarta recortes muy pequeños
 
   // UI y modales
   const [isCuestionarioModalOpen, setIsCuestionarioModalOpen] = useState(false);
@@ -142,7 +145,7 @@ const RecordingPage: React.FC = () => {
   const analysisIntervalIdRef = useRef<NodeJS.Timeout | null>(null);
   const latestDetectionRef = useRef<faceapi.FaceDetection | null>(null);
 
-  const detectionOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+  const detectionOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.6 });
 
   useEffect(() => { currentSessionIdRef.current = currentSessionId; }, [currentSessionId]);
 
@@ -282,6 +285,7 @@ const RecordingPage: React.FC = () => {
     const context = canvas.getContext('2d');
     if (!context) return;
 
+    // limpiamos y espejamos: dibujamos el video -> canvas (espejado)
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.save();
     context.scale(-1, 1);
@@ -289,11 +293,23 @@ const RecordingPage: React.FC = () => {
     context.restore();
 
     try {
+      // detectamos sobre el CANVAS (ya espejado)
       const detections = await faceapi.detectAllFaces(canvas, detectionOptions);
-      const resizedDetections = faceapi.resizeResults(detections, { width: canvas.width, height: canvas.height });
-      faceapi.draw.drawDetections(canvas, resizedDetections);
-      latestDetectionRef.current = resizedDetections.length > 0 ? resizedDetections[0] : null;
+      const resized = faceapi.resizeResults(detections, { width: canvas.width, height: canvas.height });
 
+      // dibujado (opcional)
+      faceapi.draw.drawDetections(canvas, resized);
+
+      // descarta caras pegadas a los bordes
+      const BORDER = 10; // px
+      const valid = resized.filter(d => {
+        const b = d.box;
+        return b.x > BORDER && b.y > BORDER &&
+              b.x + b.width  < canvas.width  - BORDER &&
+              b.y + b.height < canvas.height - BORDER;
+      });
+
+      latestDetectionRef.current = valid.length ? valid[0] : null;
       if (!latestDetectionRef.current) setStatusMessage('Buscando rostro...');
     } catch (error: any) {
       console.error('Error durante la detección facial:', error);
@@ -302,30 +318,49 @@ const RecordingPage: React.FC = () => {
     }
   }, [detectionOptions, modelsLoaded]);
 
+
   // ---------- Análisis y /predict ----------
   const analyzeDetectedFace = useCallback(async (sessionId: number) => {
     if (!latestDetectionRef.current || isAnalyzing || !modelsLoaded || isRecordingPausedRef.current) return;
 
     setIsAnalyzing(true);
-    const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) { setIsAnalyzing(false); return; }
+    if (!canvas) { setIsAnalyzing(false); return; }
 
     const box = latestDetectionRef.current.box;
     const { x, y, width, height } = box;
 
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    const tempContext = tempCanvas.getContext('2d');
-    if (!tempContext) { setIsAnalyzing(false); return; }
+    // margen alrededor del rostro
+    const marginX = Math.floor(width * MARGIN);
+    const marginY = Math.floor(height * MARGIN);
 
-    try {
-      tempContext.drawImage(video, x, y, width, height, 0, 0, width, height);
-    } catch (e) {
+    // expandimos y "clamp" dentro del canvas
+    let sx = Math.max(0, Math.floor(x - marginX));
+    let sy = Math.max(0, Math.floor(y - marginY));
+    let sw = Math.min(canvas.width  - sx, Math.floor(width  + 2 * marginX));
+    let sh = Math.min(canvas.height - sy, Math.floor(height + 2 * marginY));
+
+    // cuadrado centrado para consistencia del dataset
+    const side = Math.max(sw, sh);
+    if (side < MIN_SIDE) { // demasiado pequeño => no enviamos
       setIsAnalyzing(false);
       return;
     }
+    const cx = sx + sw / 2;
+    const cy = sy + sh / 2;
+    sx = Math.max(0, Math.floor(cx - side / 2));
+    sy = Math.max(0, Math.floor(cy - side / 2));
+    sw = Math.min(side, canvas.width  - sx);
+    sh = Math.min(side, canvas.height - sy);
+
+    // recorte DESDE EL CANVAS (ya espejado). ¡No usar video aquí!
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = sw;
+    tempCanvas.height = sh;
+    const tctx = tempCanvas.getContext('2d');
+    if (!tctx) { setIsAnalyzing(false); return; }
+
+    tctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
 
     tempCanvas.toBlob(async (blob) => {
       if (!blob) { setStatusMessage('Error interno: No se pudo procesar el frame para enviar.'); setIsAnalyzing(false); return; }
@@ -333,7 +368,7 @@ const RecordingPage: React.FC = () => {
       const formData = new FormData();
       formData.append('file', blob, 'face_image.png');
       formData.append('sesion_id', sessionId.toString());
-      formData.append('ancho_rostro_px', Math.round(width).toString());
+      formData.append('ancho_rostro_px', Math.round(sw).toString());
 
       try {
         const response = await fetch(BACKEND_PREDICT_URL, { method: 'POST', body: formData });
@@ -344,10 +379,9 @@ const RecordingPage: React.FC = () => {
 
         const result = await response.json();
 
-        // NEW: marca último predict exitoso (para CP018)
+        // marca último predict OK (para tu guardia de inactividad)
         lastPredictAtRef.current = Date.now();
 
-        // Respeta Configuración de visibilidad (CP036)
         if (showResults) {
           setResultAreaContent(`
             <p><strong>Predicción:</strong> ${result.prediction}</p>
