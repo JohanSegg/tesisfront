@@ -93,7 +93,7 @@ const RecordingPage: React.FC = () => {
   const navigate = useNavigate();
   const { defaultDurationKey, showResults } = useSettings(); // NEW
   
-  const MARGIN = 0.15;     // 15% de margen alrededor del rostro
+  const MARGIN = 0.01;     // 15% de margen alrededor del rostro
   const MIN_SIDE = 120;    // descarta recortes muy pequeños
 
   // UI y modales
