@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, type RegisterFormData } from '../contexto/AuthContext'; // Importa RegisterFormData
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState<string>('');
@@ -44,35 +45,47 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
  // Manejador (Handler) para el envío del formulario de Login
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccessMessage('');
-    setUsernameError('');
-    setPasswordError('');
+const handleLoginSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+  setSuccessMessage('');
+  setUsernameError('');
+  setPasswordError('');
 
-    let valid = true;
+  let valid = true;
+  if (!username.trim()) { setUsernameError('El usuario es obligatorio.'); valid = false; }
+  if (!password.trim()) { setPasswordError('La contraseña es obligatoria.'); valid = false; }
+  if (!valid) return;
 
-    if (!username.trim()) {
-      setUsernameError('El usuario es obligatorio.');
-      valid = false;
-    }
+  const { success, trabajadorId } = await login(username, password);
 
-    if (!password.trim()) {
-      setPasswordError('La contraseña es obligatoria.');
-      valid = false;
-    }
+  if (!success || !trabajadorId) {
+    setError('Credenciales inválidas. Verifica tu usuario y contraseña.');
+    return;
+  }
 
-    if (!valid) return; // ❌ No sigue si faltan campos
+  setSuccessMessage('Inicio de sesión exitoso. Redirigiendo...');
 
-    const success = await login(username, password);
-    if (success) {
-      setSuccessMessage('Inicio de sesión exitoso. Redirigiendo...');
+  try {
+    // Trae el rol del usuario
+    const r = await fetch(`${API_BASE_URL}/trabajadores/${trabajadorId}/basic`);
+    if (!r.ok) {
+      // Si algo falla, mandamos a /recording como fallback
       navigate('/recording');
-    } else {
-      setError('Credenciales inválidas. Verifica tu usuario y contraseña.');
+      return;
     }
-  };
+    const me = await r.json(); // debe incluir role_id
+    console.log(me)
+    if (me?.role_id === 2) {
+      navigate('/admin');
+    } else {
+      navigate('/recording');
+    }
+  } catch {
+    // Fallback seguro
+    navigate('/recording');
+  }
+};
 
 
 // Manejador para el cambio de inputs en el formulario de Registro

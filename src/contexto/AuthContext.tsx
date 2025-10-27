@@ -23,7 +23,7 @@ export interface RegisterFormData {
 interface AuthContextType {
   isLoggedIn: boolean;
   trabajadorId: number | null; // Guarda el ID del trabajador
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; trabajadorId?: number }>;
   logout: () => void;
   register: (formData: RegisterFormData) => Promise<boolean>; // Función de registro
 }
@@ -73,38 +73,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isLoggedIn, trabajadorId]);
 
   // Función de Login
-  const login = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/login/`, { // Uso del API del backend
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+const login = async (username: string, password: string): Promise<{ success: boolean; trabajadorId?: number }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
 
-      if (response.ok) {
-        const data = await response.json();
-        setIsLoggedIn(true);
-        setUsername(username);
-        setTrabajadorId(data.trabajador_id); // Guarda el ID del trabajador recibido del backend
-        console.log('Inicio de sesión exitoso. Trabajador ID:', data.trabajador_id);
-        return true;
-      } else {
-        const errorData = await response.json();
-        console.error('Error de inicio de sesión:', errorData.detail);
-        setIsLoggedIn(false);
-        setUsername(null);
-        setTrabajadorId(null);
-        return false;
-      }
-    } catch (error) {
-      console.error('Error de red al intentar iniciar sesión:', error);
+    if (response.ok) {
+      const data = await response.json(); // => { trabajador_id: number, ... }
+      setIsLoggedIn(true);
+      setUsername(username);
+      setTrabajadorId(data.trabajador_id);
+      console.log('Inicio de sesión exitoso. Trabajador ID:', data.trabajador_id);
+      return { success: true, trabajadorId: data.trabajador_id };
+    } else {
+      const errorData = await response.json();
+      console.error('Error de inicio de sesión:', errorData.detail);
       setIsLoggedIn(false);
+      setUsername(null);
       setTrabajadorId(null);
-      return false;
+      return { success: false };
     }
-  };
+  } catch (error) {
+    console.error('Error de red al intentar iniciar sesión:', error);
+    setIsLoggedIn(false);
+    setTrabajadorId(null);
+    return { success: false };
+  }
+};
 
   // Función de Registro
   const register = async (formData: RegisterFormData): Promise<boolean> => {
