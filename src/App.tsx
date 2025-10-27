@@ -9,6 +9,7 @@ import HistorialPage from './pages/HistorialPage';
 import ProfilePage from './pages/ProfilePage';
 import { SettingsProvider } from './contexto/SettingsContext';
 import SettingsPage from './pages/SettingsPage';
+import AdminPage from './pages/AdminPage';
 
 
 const App: React.FC = () => {
@@ -24,6 +25,8 @@ const App: React.FC = () => {
             <Route path="/Historial" element={<HistorialPage />} />
             <Route path="/settings" element={<SettingsPage />} /> {/* NEW */}
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminPage />} />
+
             {/**/}
           </Routes>
         </AuthProvider>

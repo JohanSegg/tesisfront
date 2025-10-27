@@ -19,6 +19,13 @@ interface Cuestionario {
   updated_at: string;
 }
 
+interface TrabajadorBasic {
+  trabajador_id: number;
+  nombre: string;
+  username: string;
+  role_id: number;
+}
+
 // Interfaz actualizada para los datos que resumen una sesion (junto al cuestionario)
 interface SesionResumen {
   sesion_id: number;
@@ -198,6 +205,45 @@ const HistorialPage: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [sesionToDelete, setSesionToDelete] = useState<number | null>(null);
 
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [yo, setYo] = useState<TrabajadorBasic | null>(null);
+  const [subordinados, setSubordinados] = useState<TrabajadorBasic[]>([]);
+  const [esJefe, setEsJefe] = useState<boolean>(false);
+
+
+useEffect(() => {
+  if (!trabajadorId) return;
+
+  const loadMe = async () => {
+    try {
+      const r = await fetch(`${API_BASE_URL}/trabajadores/${trabajadorId}/basic`);
+      if (!r.ok) throw new Error('No se pudo obtener el trabajador actual');
+      const me: TrabajadorBasic = await r.json();
+      setYo(me);
+
+      const jefe = me.role_id === 3;
+      setEsJefe(jefe);
+      setSelectedUserId(me.trabajador_id); // por defecto tú
+
+      if (jefe) {
+        const rs = await fetch(`${API_BASE_URL}/jefes/${me.trabajador_id}/subordinados/`);
+        if (!rs.ok) throw new Error('No se pudo obtener subordinados');
+        const subs: TrabajadorBasic[] = await rs.json();
+        setSubordinados(subs || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  loadMe();
+}, [trabajadorId]);
+
+useEffect(() => {
+  if (!startDate || !endDate) return;
+  fetchSesiones(startDate, endDate);
+}, [selectedUserId]); // reconsulta al cambiar de usuario
+
 
   const handleDeleteRequest = (id: number) => {
     setSesionToDelete(id);
@@ -227,34 +273,32 @@ const HistorialPage: React.FC = () => {
   };
 
   // --- b. Logica de fetching (obtencion externa) de datos ---
-  const fetchSesiones = useCallback(async (start: string, end: string) => {
-    if (!trabajadorId) {
-        setError("ID de trabajador no disponible. Por favor, inicie sesión.");
-        setLoading(false);
-        return;
+const fetchSesiones = useCallback(async (start: string, end: string) => {
+  const effectiveTrabId = selectedUserId ?? trabajadorId;
+  if (!effectiveTrabId) {
+    setError("ID de trabajador no disponible. Por favor, inicie sesión.");
+    setLoading(false);
+    return;
+  }
+  setLoading(true);
+  setError(null);
+  try {
+    const apiUrl = `${API_BASE_URL}/trabajadores/${effectiveTrabId}/sesiones/summary/?start_date=${start}&end_date=${end}`;
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Error al obtener el historial');
     }
-    setLoading(true);
-    setError(null);
-    try { 
-      const apiUrl = `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/?start_date=${start}&end_date=${end}`;
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error al obtener el historial');
-      }
-      const data: SesionResumen[] = await response.json();
-      setSesiones(data);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Ocurrió un error desconocido.');
-      }
-      setSesiones([]); // Limpiar datos en caso de error
-    } finally {
-      setLoading(false);
-    }
-  }, [trabajadorId]);
+    const data: SesionResumen[] = await response.json();
+    setSesiones(data);
+  } catch (err) {
+    setSesiones([]);
+    setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido.');
+  } finally {
+    setLoading(false);
+  }
+}, [trabajadorId, selectedUserId]); // 👈 agrega selectedUserId aquí
+
 
   // --- Efecto para la carga inicial (rango del mes actual) ---
   useEffect(() => {
@@ -408,6 +452,27 @@ const HistorialPage: React.FC = () => {
               className="mt-1 block w-full pl-3 pr-2 py-2 text-base text-black border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
             />
           </div>
+          {esJefe && (
+  <div className="flex-1 w-full sm:w-auto">
+    <label htmlFor="user-select" className="block text-sm font-medium text-gray-700 mb-1">
+      Usuario:
+    </label>
+    <select
+      id="user-select"
+      value={selectedUserId ?? yo?.trabajador_id ?? ''}
+      onChange={(e) => setSelectedUserId(Number(e.target.value))}
+      className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+    >
+      {yo && <option value={yo.trabajador_id}>{yo.nombre} (Yo)</option>}
+      {subordinados.map((s) => (
+        <option key={s.trabajador_id} value={s.trabajador_id}>
+          {s.nombre}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
           <button
             onClick={handleSearch}
             disabled={loading}

@@ -27,6 +27,12 @@ interface ResumenMensual {
   promedio_sesiones_por_dia_activo: number | null;
   dias_con_actividad: number;
 }
+interface TrabajadorBasic {
+  trabajador_id: number;
+  nombre: string;
+  username: string;
+  role_id: number | null;
+}
 
 interface ResumenDiario {
   fecha: string; // La API devuelve 'YYYY-MM-DD'
@@ -66,6 +72,10 @@ const months = [
 const DashboardPage: React.FC = () => {
   const { trabajadorId } = useAuth();
   const navigate = useNavigate();
+  const [yo, setYo] = useState<TrabajadorBasic | null>(null);
+  const [subordinados, setSubordinados] = useState<TrabajadorBasic[]>([]);
+  const [esJefe, setEsJefe] = useState<boolean>(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
@@ -84,13 +94,18 @@ const DashboardPage: React.FC = () => {
     }
     if (!selectedMonth || !selectedYear) return;
 
+    const effectiveTrabId = selectedUserId ?? trabajadorId;
+
+
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
         // Obtiene todos los datos (mensualmente)
         const overallResponse = await fetch(
-          `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/monthly/overall/?month=${selectedMonth}&year=${selectedYear}`
+          // `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/monthly/overall/?month=${selectedMonth}&year=${selectedYear}`
+            `${API_BASE_URL}/trabajadores/${effectiveTrabId}/sesiones/summary/monthly/overall/?month=${selectedMonth}&year=${selectedYear}`
+
         );
         if (!overallResponse.ok) {
           const errorData = await overallResponse.json();
@@ -101,7 +116,9 @@ const DashboardPage: React.FC = () => {
 
         // Obtiene datos diarios
         const dailyResponse = await fetch(
-          `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/monthly/daily-aggregated/?month=${selectedMonth}&year=${selectedYear}`
+          // `${API_BASE_URL}/trabajadores/${trabajadorId}/sesiones/summary/monthly/daily-aggregated/?month=${selectedMonth}&year=${selectedYear}`
+          `${API_BASE_URL}/trabajadores/${effectiveTrabId}/sesiones/summary/monthly/daily-aggregated/?month=${selectedMonth}&year=${selectedYear}`
+
         );
         if (!dailyResponse.ok) {
           const errorData = await dailyResponse.json();
@@ -124,7 +141,35 @@ const DashboardPage: React.FC = () => {
     };
 
     fetchData();
-  }, [trabajadorId, selectedMonth, selectedYear]);
+   }, [trabajadorId, selectedUserId, selectedMonth, selectedYear]); // 👈 añade selectedUserId
+
+
+  useEffect(() => {
+   if (!trabajadorId) return;
+   const loadMe = async () => {
+     try {
+       const r = await fetch(`${API_BASE_URL}/trabajadores/${trabajadorId}/basic`);
+       if (!r.ok) throw new Error('No se pudo obtener el trabajador actual');
+       const me: TrabajadorBasic = await r.json();
+       setYo(me);
+ 
+       // jefe si role_id === 3
+       const jefe = me.role_id === 3;
+       setEsJefe(jefe);
+       setSelectedUserId(me.trabajador_id); // por defecto tú
+ 
+       if (jefe) {
+         const rs = await fetch(`${API_BASE_URL}/jefes/${me.trabajador_id}/subordinados/`);
+         if (!rs.ok) throw new Error('No se pudo obtener subordinados');
+         const subs: TrabajadorBasic[] = await rs.json();
+         setSubordinados(subs || []);
+       }
+     } catch (e) {
+       console.error(e);
+     }
+   };
+   loadMe();
+ }, [trabajadorId]);
 
   // Memoriza los graficos que evitan renderizados innecesarios
   const chartData = useMemo(() => {
@@ -277,7 +322,28 @@ const DashboardPage: React.FC = () => {
               </option>
             ))}
           </select>
+
         </div>
+        {esJefe && (
+           <div className="flex-1 w-full sm:w-auto">
+             <label htmlFor="user-select" className="block text-sm font-medium text-gray-700 mb-1">
+               Ver registros de:
+             </label>
+             <select
+               id="user-select"
+               value={selectedUserId ?? yo?.trabajador_id ?? ''}
+               onChange={(e) => setSelectedUserId(Number(e.target.value))}
+               className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+             >
+               {yo && <option value={yo.trabajador_id}>{yo.nombre} (Yo)</option>}
+               {subordinados.map((s) => (
+                 <option key={s.trabajador_id} value={s.trabajador_id}>
+                   {s.nombre}
+                 </option>
+               ))}
+             </select>
+           </div>
+         )}
         </div>
 
         {/* b. Mensajes de Estado y Contenido */}
