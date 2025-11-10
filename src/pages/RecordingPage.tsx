@@ -452,7 +452,7 @@ const stopDetectionAndAnalysis = useCallback(async () => {
         setStatusMessage('Cámara desconectada. Análisis detenido.');
       };
     } catch (err: any) {
-      let errorTraducido = err?.message === 'Permission denied' ? 'Permisos denegados' : 'No se encontró un dispositivo';
+      // let errorTraducido = err?.message === 'Permission denied' ? 'Permisos denegados' : 'No se encontró un dispositivo';
       setStatusMessage(`Error al iniciar cámara. Asegúrate de permitir el acceso.`);
       setIsCameraActive(false);
     }
