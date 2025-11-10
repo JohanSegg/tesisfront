@@ -434,10 +434,10 @@ const handleRegisterSubmit = async (e: React.FormEvent) => {
                     className="mt-1 block w-full px-4 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Seleccionar</option>
-                    <option value="Masculino">Solo estudio</option>
-                    <option value="Femenino">Solo trabajo</option>
-                    <option value="Femenino">No estudio ni trabajo</option>
-                    <option value="Otro">Ambos</option>
+                    <option value="Estudio">Solo estudio</option>
+                    <option value="Trabajo">Solo trabajo</option>
+                    <option value="Ninguno">No estudio ni trabajo</option>
+                    <option value="Ambos">Ambos</option>
                   </select>
               
                 </div>
@@ -446,6 +446,7 @@ const handleRegisterSubmit = async (e: React.FormEvent) => {
                   <input
                     type="number"
                     id="register-horas_trabajo_semanal"
+                    min="0"
                     name="horas_trabajo_semanal"
                     value={registerFormData.horas_trabajo_semanal === undefined ? '' : registerFormData.horas_trabajo_semanal}
                     onChange={handleRegisterInputChange}
@@ -457,6 +458,7 @@ const handleRegisterSubmit = async (e: React.FormEvent) => {
                   <input
                     type="number"
                     id="register-horas_descanso_dia"
+                    min="0"
                     name="horas_descanso_dia"
                     value={registerFormData.horas_descanso_dia === undefined ? '' : registerFormData.horas_descanso_dia}
                     onChange={handleRegisterInputChange}

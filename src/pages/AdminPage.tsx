@@ -236,29 +236,37 @@ const fetchUsuariosSinJefe = async () => {
     setMarcados(s);
   };
 
-  const asignarSubordinados = async () => {
-    if (!selectedJefeId) return;
-    if (marcados.size === 0) return;
-    setMsg(null); setErr(null);
+const asignarSubordinados = async (): Promise<boolean> => {
+  if (!selectedJefeId || marcados.size === 0) return false;
+  setMsg(null); setErr(null);
 
-    const payload = {
-      jefe_id: selectedJefeId,
-      subordinado_ids: Array.from(marcados),
-    };
-    const r = await fetch(`${API_BASE_URL}/admin/asignaciones`, {
-      method: "POST",
-      headers: adminHeaders,
-      body: JSON.stringify(payload),
-    });
-    const data = await r.json();
-    if (!r.ok) {
-      setErr(data?.detail || "Error asignando subordinados");
-    } else {
-      setMsg(data?.message || "Asignación registrada exitosamente.");
-      setMarcados(new Set());
-      fetchUsuariosSinJefe();
-    }
+  const payload = {
+    jefe_id: selectedJefeId,
+    subordinado_ids: Array.from(marcados),
   };
+
+  const r = await fetch(`${API_BASE_URL}/admin/asignaciones`, {
+    method: "POST",
+    headers: adminHeaders,
+    body: JSON.stringify(payload),
+  });
+
+  const data = await r.json().catch(() => null);
+
+  if (!r.ok) {
+    setErr(data?.detail || "Error asignando subordinados");
+    return false;
+  }
+
+  setMsg(data?.message || "Asignación registrada exitosamente.");
+  setMarcados(new Set());
+
+  // refresca “sin jefe” y, AHORA SÍ, la lista de subordinados del jefe
+  await fetchUsuariosSinJefe();
+  setSubListRefresh((x) => x + 1);
+
+  return true;
+};
 
 //   const eliminarAsignacion = async (jefeId: number, subId: number) => {
 //     if (!confirm("¿Eliminar esta asignación?")) return;
@@ -524,12 +532,10 @@ onClick={() => {
         setSubListRefresh((x) => x + 1); // refrescar lista de subordinados del jefe
 
           setConfirmModal({ open: false, message: "", onConfirm: null });
-          await asignarSubordinados(); // hará el setMsg correcto
-          // CP052: además del setMsg (CP053), muestra explícitamente el copy del HU
-          setInfoModal({
-            open: true,
-            message: "Colaborador asignado correctamente."
-          });
+          const ok = await asignarSubordinados();   // ← hace el refresh al final
+          if (ok) {
+            setInfoModal({ open: true, message: "Colaborador asignado correctamente." });
+          }
         }
       });
     }}

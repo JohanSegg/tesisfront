@@ -14,11 +14,22 @@ interface CuestionarioFormData {
   dificultad_concentracion?: number;
 }
 
+type EndReason = 'NO_DETECTIONS' | 'PAUSE_TIMEOUT' | 'SESSION_DURATION';
+
+const END_REASON_LABEL: Record<EndReason, string> = {
+  NO_DETECTIONS:   'Cierre automático: 10 minutos sin detecciones',
+  PAUSE_TIMEOUT:   'Cierre automático: pausa prolongada (10 minutos)',
+  SESSION_DURATION:'Cierre automático: se alcanzó la duración configurada',
+};
+
+
 interface CuestionarioModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (formData: CuestionarioFormData) => void;
   sessionId: number;
+  endReasonLabel?: string; // NEW
+
 }
 
 // ---------- UI auxiliar ----------
@@ -29,7 +40,7 @@ const RangeInput: React.FC<{ label: string; value: number; onChange: (e: React.C
   </div>
 );
 
-const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, onSubmit, sessionId }) => {
+const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, onSubmit, sessionId, endReasonLabel }) => {
   const [formData, setFormData] = useState<CuestionarioFormData>({
     sesion_id: sessionId,
     descripcion_trabajo: '',
@@ -65,6 +76,13 @@ const CuestionarioModal: React.FC<CuestionarioModalProps> = ({ isOpen, onClose, 
     <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-lg mx-4 text-white animate-fade-in-up">
         <h2 className="text-2xl font-bold mb-4 text-center text-indigo-400">Cuestionario Post-Sesión</h2>
+        {endReasonLabel && (
+  <div className="mb-4">
+    <span className="inline-block px-3 py-1 text-sm font-semibold rounded bg-gray-700 text-indigo-300">
+      {endReasonLabel}
+    </span>
+  </div>
+)}
         <p className="text-center text-gray-400 mb-6">Por favor, completa el siguiente formulario sobre tu percepción durante la sesión que acaba de finalizar (ID: {sessionId}).</p>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -92,7 +110,8 @@ const RecordingPage: React.FC = () => {
   const { isLoggedIn, trabajadorId, logout } = useAuth();
   const navigate = useNavigate();
   const { defaultDurationKey, showResults } = useSettings(); // NEW
-  
+  const [endReason, setEndReason] = useState<EndReason | undefined>(undefined);
+
   const MARGIN = 0.01;     // 15% de margen alrededor del rostro
   const MIN_SIDE = 120;    // descarta recortes muy pequeños
 
@@ -123,8 +142,8 @@ const RecordingPage: React.FC = () => {
   }, [isRecordingPaused]);
 
   // Inactividad / duración
-  const TEN_MIN_MS = 10 * 60 * 1000;
-  // const TEN_MIN_MS = 10 * 1000;
+  // const TEN_MIN_MS = 10 * 60 * 1000;
+  const TEN_MIN_MS = 10 * 1000;
   const lastPredictAtRef = useRef<number | null>(null); // NEW: marca el último /predict exitoso
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null); // NEW: límite de sesión por duración
   const inactivityCheckIntervalRef = useRef<NodeJS.Timeout | null>(null); // NEW: chequeo periódico de reglas CP018/CP019
@@ -205,39 +224,33 @@ const RecordingPage: React.FC = () => {
   }, [clearSessionTimersAndGuards]);
 
   // ---------- Finalizar sesión con razón (abre cuestionario como tu botón) ----------
-  const finalizeSession = useCallback(async (reason: 'NO_DETECTIONS' | 'PAUSE_TIMEOUT' | 'SESSION_DURATION', meta?: { cp: string; us: string; msg: string }) => {
-    const sid = currentSessionIdRef.current;
-    if (sid != null) {
-      // Opcional: si tienes endpoint para marcar finalización con razón, puedes habilitar esto
-      try {
-        console.log(reason);
-        // Ejemplo: PUT /sessions/{id}/finish/  (ajusta si tu API usa otra ruta)
-        // await fetch(`${API_BASE_URL}/sessions/${sid}/finish/`, {
-        //   method: 'PUT',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ reason, ...meta }),
-        // }).catch(() => {}); // fail-safe
-      } catch (e) {
-        console.warn('No se pudo notificar razón de finalización al backend. Continuando con cierre local...');
-      }
-    }
-    // Mismo flujo que tu botón "Terminar Grabación"
-    if (sid != null) {
-      setSessionToFinalizeId(sid);
-      setIsCuestionarioModalOpen(true);
-    }
-    stopAllMediaAndIntervals();
-    setStatusMessage(meta?.msg || 'Sesión finalizada.');
-  }, [API_BASE_URL, stopAllMediaAndIntervals]);
+const finalizeSession = useCallback(async (
+  reason: EndReason,
+  meta?: { cp: string; us: string; msg: string }
+) => {
+  const sid = currentSessionIdRef.current;
+
+  // guardamos el motivo para mostrarlo en el modal
+  setEndReason(reason);
+
+  if (sid != null) {
+    setSessionToFinalizeId(sid);
+    setIsCuestionarioModalOpen(true);
+  }
+  stopAllMediaAndIntervals();
+  setStatusMessage(meta?.msg || 'Sesión finalizada.');
+}, [stopAllMediaAndIntervals]);
 
   // ---------- Detener (tu flujo original) ----------
-  const stopDetectionAndAnalysis = useCallback(async () => {
-    if (currentSessionId !== null) {
-      setSessionToFinalizeId(currentSessionId);
-      setIsCuestionarioModalOpen(true);
-    }
-    stopAllMediaAndIntervals();
-  }, [currentSessionId, stopAllMediaAndIntervals]);
+const stopDetectionAndAnalysis = useCallback(async () => {
+  // NO seteamos endReason aquí (manual)
+  const sid = currentSessionId;
+  if (sid !== null) {
+    setSessionToFinalizeId(sid);
+    setIsCuestionarioModalOpen(true);
+  }
+  stopAllMediaAndIntervals();
+}, [currentSessionId, stopAllMediaAndIntervals]);
 
   // ---------- Envío cuestionario ----------
   const handleCuestionarioSubmit = useCallback(async (formData: CuestionarioFormData) => {
@@ -264,6 +277,8 @@ const RecordingPage: React.FC = () => {
       setIsCuestionarioModalOpen(false);
       setSessionToFinalizeId(null);
       setCurrentSessionId(null);
+      setEndReason(undefined); // NE
+
     }
   }, [BACKEND_CUESTIONARIO_URL]);
 
@@ -271,6 +286,7 @@ const RecordingPage: React.FC = () => {
     setIsCuestionarioModalOpen(false);
     setSessionToFinalizeId(null);
     setCurrentSessionId(null);
+      setEndReason(undefined); // NEW
     setStatusMessage("Cuestionario omitido.");
   };
 
@@ -437,7 +453,7 @@ const RecordingPage: React.FC = () => {
       };
     } catch (err: any) {
       let errorTraducido = err?.message === 'Permission denied' ? 'Permisos denegados' : 'No se encontró un dispositivo';
-      setStatusMessage(`Error al iniciar cámara: ${errorTraducido}. Asegúrate de permitir el acceso.`);
+      setStatusMessage(`Error al iniciar cámara. Asegúrate de permitir el acceso.`);
       setIsCameraActive(false);
     }
   }, [modelsLoaded, isCameraActive, stopAllMediaAndIntervals, API_BASE_URL]);
@@ -667,7 +683,7 @@ const RecordingPage: React.FC = () => {
                 ${isCameraActive ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}
                 ${!modelsLoaded ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {isCameraActive ? 'Apagar Cámara' : 'Encender Cámara'}
+              {isCameraActive ? 'Desconectar Cámara' : 'Conectar Cámara'}
             </button>
 
             <button
@@ -751,11 +767,13 @@ const RecordingPage: React.FC = () => {
       </main>
 
       <CuestionarioModal
-        isOpen={isCuestionarioModalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleCuestionarioSubmit}
-        sessionId={sessionToFinalizeId || 0}
-      />
+      isOpen={isCuestionarioModalOpen}
+      onClose={handleCloseModal}
+      onSubmit={handleCuestionarioSubmit}
+      sessionId={sessionToFinalizeId || 0}
+      endReasonLabel={endReason ? END_REASON_LABEL[endReason] : undefined}
+    />
+
     </div>
   );
 };
